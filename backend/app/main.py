@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.config import settings
-from backend.app.routers import health
+from backend.app.routers import extraction, health, upload
 
 app = FastAPI(
     title=settings.app_name,
@@ -21,3 +21,5 @@ app.add_middleware(
 
 # Register routers
 app.include_router(health.router)
+app.include_router(upload.router)
+app.include_router(extraction.router)
