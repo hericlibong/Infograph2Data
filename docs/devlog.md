@@ -310,5 +310,175 @@ curl -X POST http://127.0.0.1:8001/files \
 - Datasets persist on disk in JSON format for easy debugging.
 
 ### Next Steps
-- [ ] Phase 4: Review + edit endpoints (GET/PUT /datasets/{id})
-- [ ] Phase 4: Export endpoint (GET /export/{id} → ZIP with CSV/JSON + manifest)
+- [x] Phase 4: Review + edit endpoints (GET/PUT /datasets/{id})
+- [x] Phase 4: Export endpoint (GET /export/{id} → ZIP with CSV/JSON + manifest)
+
+---
+
+## [2026-02-06] Phase 4: Review + Export
+
+### Context
+Implement dataset review/edit endpoints and ZIP export with provenance manifest.
+
+### Files Created/Modified
+```
+backend/app/
+├── schemas/
+│   ├── dataset.py         # Added EditHistoryEntry, DatasetUpdate
+│   └── export.py          # ExportManifest, ExportSource, etc.
+├── services/
+│   └── extractor.py       # Added list_datasets function
+├── routers/
+│   ├── review.py          # GET/PUT /datasets/{id}, GET /datasets
+│   └── export.py          # GET /export/{id}
+├── main.py                # Added review + export routers
+docs/
+└── phase_4_plan.md        # API contracts + decisions
+```
+
+### Commands
+
+```bash
+# Run the server
+source .venv/bin/activate
+uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8001
+
+# Get dataset for review
+curl http://127.0.0.1:8001/datasets/{dataset_id}
+
+# List all datasets
+curl http://127.0.0.1:8001/datasets
+
+# Edit a dataset (update rows)
+curl -X PUT http://127.0.0.1:8001/datasets/{dataset_id} \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rows": [
+      {"row_id": 1, "Product": "Apple", "Price": "1.99", "Quantity": "100"},
+      {"row_id": 2, "Product": "Banana", "Price": "0.75", "Quantity": "200"},
+      {"row_id": 3, "Product": "Orange", "Price": "2.00", "Quantity": "150"}
+    ]
+  }'
+
+# Export as ZIP
+curl http://127.0.0.1:8001/export/{dataset_id} --output export.zip
+
+# Verify ZIP contents
+unzip -l export.zip
+unzip -p export.zip data.csv
+unzip -p export.zip manifest.json
+```
+
+### Expected Output
+
+**GET /datasets/{id}**:
+```json
+{
+  "id": "ds-92a198fa93d7",
+  "job_id": "job-ceb14ad98a53",
+  "file_id": "3cb22d4c-027d-4d56-ac81-c2b23e33bbda",
+  "page": 1,
+  "strategy_used": "pdf_text",
+  "created_at": "2026-02-06T00:05:15.419949Z",
+  "updated_at": "2026-02-06T00:05:15.419949Z",
+  "columns": ["Product", "Price", "Quantity"],
+  "rows": [
+    {"row_id": 1, "Product": "Apple", "Price": "1.50", "Quantity": "100"},
+    {"row_id": 2, "Product": "Banana", "Price": "0.75", "Quantity": "200"},
+    {"row_id": 3, "Product": "Orange", "Price": "2.00", "Quantity": "150"}
+  ],
+  "confidence": 0.8,
+  "edit_history": []
+}
+```
+
+**PUT /datasets/{id}** (after edit):
+```json
+{
+  "id": "ds-92a198fa93d7",
+  "updated_at": "2026-02-06T00:55:24.619621Z",
+  "columns": ["Product", "Price", "Quantity"],
+  "rows": [
+    {"row_id": 1, "Product": "Apple", "Price": "1.99", "Quantity": "100"},
+    ...
+  ],
+  "edit_history": [
+    {
+      "timestamp": "2026-02-06T00:55:24.619621Z",
+      "action": "update",
+      "changes": {"rows_added": 0, "rows_removed": 0, "rows_modified": 3}
+    }
+  ]
+}
+```
+
+**GET /export/{id}** (ZIP contents):
+```
+Archive:  export.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+       74  2026-02-06 01:55   data.csv
+      232  2026-02-06 01:55   data.json
+      822  2026-02-06 01:55   manifest.json
+---------                     -------
+     1128                     3 files
+```
+
+**data.csv**:
+```csv
+Product,Price,Quantity
+Apple,1.99,100
+Banana,0.75,200
+Orange,2.00,150
+```
+
+**manifest.json**:
+```json
+{
+  "dataset_id": "ds-92a198fa93d7",
+  "exported_at": "2026-02-06T00:55:39.326711Z",
+  "source": {
+    "file_id": "3cb22d4c-027d-4d56-ac81-c2b23e33bbda",
+    "filename": "table_sample.pdf",
+    "page": 1
+  },
+  "extraction": {
+    "job_id": "job-ceb14ad98a53",
+    "strategy": "pdf_text",
+    "extracted_at": "2026-02-06T00:05:15.419949Z",
+    "confidence": 0.8
+  },
+  "data": {
+    "columns": ["Product", "Price", "Quantity"],
+    "row_count": 3
+  },
+  "edits": {
+    "total_edits": 1,
+    "last_edited_at": "2026-02-06T00:55:24.619621Z",
+    "history": [...]
+  }
+}
+```
+
+**Dataset not found** (404):
+```json
+{"detail": "Dataset not found: nonexistent"}
+```
+
+### Decisions
+- **Full row replacement**: PUT replaces all rows (simpler than PATCH for MVP).
+- **Edit history**: Append-only log tracks columns added/removed, rows modified.
+- **ZIP export**: Always includes manifest.json; CSV and JSON are optional via `?formats=`.
+- **Clean JSON export**: Removes `row_id` from exported JSON for cleaner output.
+
+### Assumptions
+- Single-user mode; no concurrent edit conflicts.
+- Edit history is append-only, never pruned.
+- Export is synchronous (fast enough for demo datasets).
+
+### Summary
+All 4 phases complete:
+- ✅ Phase 1: Foundation (health, CORS, docs)
+- ✅ Phase 2: Upload + Storage (POST/GET /files)
+- ✅ Phase 3: Scope + Extraction (preview, extract, jobs)
+- ✅ Phase 4: Review + Export (datasets, edit history, ZIP)

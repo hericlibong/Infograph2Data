@@ -55,6 +55,21 @@ def load_dataset(dataset_id: str) -> Dataset | None:
     return Dataset(**data)
 
 
+def list_datasets() -> list[Dataset]:
+    """List all datasets."""
+    datasets_path = get_datasets_path()
+    datasets = []
+
+    for dataset_file in datasets_path.glob("*.json"):
+        try:
+            data = json.loads(dataset_file.read_text())
+            datasets.append(Dataset(**data))
+        except Exception:
+            continue
+
+    return sorted(datasets, key=lambda d: d.created_at, reverse=True)
+
+
 def parse_table_from_text(text: str) -> tuple[list[str], list[dict]]:
     """
     Attempt to parse tabular data from text.

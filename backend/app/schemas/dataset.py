@@ -12,6 +12,14 @@ class DatasetRow(BaseModel):
     # Additional fields are dynamic based on extracted columns
 
 
+class EditHistoryEntry(BaseModel):
+    """A single edit history entry."""
+
+    timestamp: datetime
+    action: str = Field(..., description="Action type: create, update, delete")
+    changes: dict = Field(default_factory=dict, description="Details of changes made")
+
+
 class Dataset(BaseModel):
     """An extracted dataset with rows and metadata."""
 
@@ -27,6 +35,7 @@ class Dataset(BaseModel):
     rows: list[dict] = Field(default_factory=list, description="Extracted rows")
     raw_text: str | None = Field(None, description="Original extracted text")
     confidence: float | None = Field(None, ge=0, le=1, description="Extraction confidence")
+    edit_history: list[EditHistoryEntry] = Field(default_factory=list, description="Edit history")
 
 
 class DatasetSummary(BaseModel):
@@ -39,3 +48,10 @@ class DatasetSummary(BaseModel):
     row_count: int
     column_count: int
     created_at: datetime
+
+
+class DatasetUpdate(BaseModel):
+    """Request to update a dataset."""
+
+    columns: list[str] | None = Field(None, description="Updated column names")
+    rows: list[dict] | None = Field(None, description="Updated rows (full replacement)")
