@@ -482,3 +482,142 @@ All 4 phases complete:
 - ✅ Phase 2: Upload + Storage (POST/GET /files)
 - ✅ Phase 3: Scope + Extraction (preview, extract, jobs)
 - ✅ Phase 4: Review + Export (datasets, edit history, ZIP)
+
+---
+
+## [2026-02-06] Backend Test Suite Implementation
+
+### Context
+Implement comprehensive test suite following docs/test_plan.md. Coverage gate: 80% minimum.
+
+### Files Created/Modified
+```
+tests/
+├── conftest.py              # Shared fixtures (client, temp_storage, sample files)
+├── unit/
+│   ├── __init__.py
+│   ├── test_storage.py      # 17 tests - storage service
+│   ├── test_pdf.py          # 17 tests - PDF service
+│   └── test_extractor.py    # 15 tests - extractor service
+├── integration/
+│   ├── __init__.py
+│   ├── test_health.py       # 1 test - health endpoint
+│   ├── test_upload.py       # 9 tests - upload endpoints
+│   ├── test_extraction.py   # 14 tests - extraction endpoints
+│   ├── test_review.py       # 8 tests - review endpoints
+│   └── test_export.py       # 8 tests - export endpoints
+└── e2e/
+    ├── __init__.py
+    └── test_happy_path.py   # 1 test - complete workflow
+pyproject.toml               # Added pytest-cov, coverage config
+docs/test_plan.md            # Updated with commands + coverage policy
+```
+
+### Commands
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Install dev dependencies (includes pytest-cov)
+pip install -e ".[dev]"
+
+# Run full test suite with coverage (MAIN COMMAND)
+pytest tests/ \
+  -v \
+  --tb=short \
+  --cov=backend \
+  --cov-report=term-missing \
+  --cov-fail-under=80 \
+  --durations=10
+
+# Quick test run (no coverage)
+pytest tests/ -v --tb=short
+
+# Run specific test file
+pytest tests/integration/test_upload.py -v
+
+# Run with HTML coverage report
+pytest tests/ --cov=backend --cov-report=html
+open htmlcov/index.html
+```
+
+### Expected Output
+
+```
+=================== test session starts ====================
+platform linux -- Python 3.12.3, pytest-9.0.2
+plugins: cov-7.0.0, anyio-4.12.1
+collected 93 items
+
+tests/e2e/test_happy_path.py::TestEndToEndHappyPath::test_e2e_upload_extract_edit_export PASSED
+tests/integration/test_export.py::TestExportDataset::test_export_zip_default PASSED
+...
+tests/unit/test_storage.py::TestListFiles::test_list_files_sorted_by_date PASSED
+
+==================== tests coverage ========================
+Name                                Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------
+backend/app/config.py                  12      0   100%
+backend/app/main.py                    11      0   100%
+backend/app/routers/export.py          53      0   100%
+backend/app/routers/extraction.py      53      4    92%   41, 76, 89, 123
+backend/app/routers/health.py           6      0   100%
+backend/app/routers/review.py          44      1    98%   77
+backend/app/routers/upload.py          23      1    96%   34
+backend/app/schemas/dataset.py         33      0   100%
+backend/app/schemas/export.py          26      0   100%
+backend/app/schemas/extraction.py      44      0   100%
+backend/app/schemas/upload.py          11      0   100%
+backend/app/services/extractor.py     166     34    80%   ...
+backend/app/services/pdf.py            56      3    95%   88, 145-146
+backend/app/services/storage.py        64      6    91%   ...
+-----------------------------------------------------------------
+TOTAL                                 602     49    92%
+Required test coverage of 80% reached. Total coverage: 91.86%
+
+=============== slowest 10 durations =======================
+0.10s call  tests/e2e/test_happy_path.py::...
+0.05s call  tests/integration/test_extraction.py::...
+...
+
+=============== 93 passed, 1 warning in 1.66s ==============
+```
+
+### Test Summary
+
+| Category | Tests | Status |
+|----------|-------|--------|
+| Unit: Storage | 17 | ✅ |
+| Unit: PDF | 17 | ✅ |
+| Unit: Extractor | 15 | ✅ |
+| Integration: Health | 1 | ✅ |
+| Integration: Upload | 9 | ✅ |
+| Integration: Extraction | 14 | ✅ |
+| Integration: Review | 8 | ✅ |
+| Integration: Export | 8 | ✅ |
+| E2E: Happy Path | 1 | ✅ |
+| **Total** | **93** | **✅ All Pass** |
+
+### Coverage Summary
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| Total Coverage | 91.86% | ✅ ≥ 80% |
+| Threshold | 80% | Enforced |
+| Exit Code | 0 | ✅ Pass |
+
+### Decisions
+- Used `asyncio.run()` for async function tests instead of pytest-asyncio (simpler, no extra dependency).
+- Fixtures use `tmp_path` for automatic cleanup.
+- Session-scoped fixtures for sample files (performance).
+- Given/When/Then docstrings for clarity.
+
+### Assumptions
+- All tests are deterministic and isolated.
+- No external services (OCR/LLM) tested.
+- Coverage exclusions: `__init__.py`, test files.
+
+### Next Steps
+- [ ] Frontend implementation (Vite/React)
+- [ ] CI pipeline (GitHub Actions)
