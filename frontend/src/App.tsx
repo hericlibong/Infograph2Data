@@ -1,5 +1,6 @@
 import { MainLayout } from './components/MainLayout'
 import { UploadPage } from './pages/UploadPage'
+import { IdentifyPage } from './pages/IdentifyPage'
 import { useAppStore } from './store/useAppStore'
 
 function App() {
@@ -8,16 +9,8 @@ function App() {
   return (
     <MainLayout>
       {currentStep === 'upload' && <UploadPage />}
-      {currentStep === 'identify' && (
-        <div className="text-center py-12 text-gray-500">
-          Identify step (coming soon)
-        </div>
-      )}
-      {currentStep === 'select' && (
-        <div className="text-center py-12 text-gray-500">
-          Select step (coming soon)
-        </div>
-      )}
+      {currentStep === 'identify' && <IdentifyPage />}
+      {currentStep === 'select' && <IdentifyPage />}
       {currentStep === 'review' && (
         <div className="text-center py-12 text-gray-500">
           Review step (coming soon)
