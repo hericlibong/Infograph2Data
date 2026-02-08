@@ -127,10 +127,70 @@ POST /extract/run
     }
   ],
   "options": {
+    "granularity": "full_with_source",
     "merge_datasets": false,
     "output_language": "en"
   }
 }
+```
+
+**Extraction Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `granularity` | enum | `"full"` | Data extraction granularity (see below) |
+| `merge_datasets` | bool | `false` | Merge all extractions into one dataset |
+| `output_language` | string | `"en"` | Target language for column names |
+
+**Granularity Options:**
+
+| Value | Description | Use Case |
+|-------|-------------|----------|
+| `annotated_only` | Extract only explicitly labeled values on the chart | When you need only the "official" values displayed |
+| `full` | Extract all data points (annotated + estimated from axes) | When you need complete granular data for analysis |
+| `full_with_source` | Same as `full` but adds a `source` column | When you need to distinguish reliable vs estimated values |
+
+**Example with `granularity: "annotated_only"`** (4 rows):
+```json
+{
+  "columns": ["Year", "Cases"],
+  "rows": [
+    {"Year": 2023, "Cases": 63},
+    {"Year": 2024, "Cases": 283},
+    {"Year": 2025, "Cases": 2265},
+    {"Year": 2026, "Cases": 658}
+  ]
+}
+```
+
+**Example with `granularity: "full"`** (37 rows):
+```json
+{
+  "columns": ["Year", "Month", "Cases"],
+  "rows": [
+    {"Year": 2023, "Month": "Jan", "Cases": 0},
+    {"Year": 2023, "Month": "Feb", "Cases": 5},
+    {"Year": 2023, "Month": "Mar", "Cases": 20},
+    ...
+    {"Year": 2023, "Month": "Aug", "Cases": 63}
+  ]
+}
+```
+
+**Example with `granularity: "full_with_source"`** (37 rows with source):
+```json
+{
+  "columns": ["Year", "Month", "Cases", "source"],
+  "rows": [
+    {"Year": 2023, "Month": "Jan", "Cases": 0, "source": "estimated"},
+    {"Year": 2023, "Month": "Feb", "Cases": 5, "source": "estimated"},
+    {"Year": 2023, "Month": "Aug", "Cases": 63, "source": "annotated"},
+    {"Year": 2024, "Month": "Dec", "Cases": 283, "source": "annotated"}
+  ]
+}
+```
+
+> **Note:** The `source` column allows the frontend to highlight which values are exact (`annotated`) vs read from the axis (`estimated`). Users can focus their review on estimated values during the Human-in-the-loop step.
 ```
 
 **Item Selection Logic:**
@@ -248,31 +308,28 @@ Important:
 
 ### Prompt: Extraction (Step 2)
 
+The extraction prompt varies based on the `granularity` option:
+
+#### Prompt: `annotated_only`
 ```
-You are a data extraction assistant. Extract structured data from the specified elements in this image.
+Extract ONLY the values that are explicitly annotated/labeled on the chart.
+Do NOT estimate or read values from axes.
+```
 
-Elements to extract:
-{{items_json}}
+#### Prompt: `full` (default)
+```
+Extract ALL data points at EVERY X-axis position for EVERY series.
+For time series, extract at the FINEST granularity visible (monthly if months shown).
+If a value is not annotated, read it from the Y-axis gridlines.
+```
 
-For each element, extract ALL numeric data into a structured table format.
+#### Prompt: `full_with_source`
+```
+Extract ALL data points and add a "source" column:
+- "annotated" = value is explicitly shown as text on the chart
+- "estimated" = value was read from the axis/gridlines
 
-Rules:
-- Use the exact values shown (do not round)
-- If values must be read from an axis (not annotated), add a note about accuracy
-- Translate labels to {{output_language}} if requested
-- Preserve the original meaning and context
-
-Respond in JSON format:
-{
-  "extractions": [
-    {
-      "item_id": "...",
-      "columns": ["Col1", "Col2", ...],
-      "rows": [{"Col1": value, "Col2": value}, ...],
-      "notes": "any extraction notes"
-    }
-  ]
-}
+This allows users to identify which values need review.
 ```
 
 ---

@@ -621,3 +621,151 @@ Required test coverage of 80% reached. Total coverage: 91.86%
 ### Next Steps
 - [ ] Frontend implementation (Vite/React)
 - [ ] CI pipeline (GitHub Actions)
+
+---
+
+## [2026-02-08] Phase 5 — Vision LLM Extraction Implemented
+
+### Context
+Implemented two-step Vision LLM extraction workflow to extract data from infographics and charts using GPT-4o. This adds the core extraction capability that was missing (previous extraction only worked on PDFs with text layers).
+
+### Branch
+`feature/phase-5-vision-llm`
+
+### Files Created
+```
+backend/app/
+├── schemas/
+│   └── identification.py   # Pydantic models for identification workflow
+├── services/
+│   └── vision.py           # Vision LLM service (OpenAI integration)
+└── routers/
+    └── identify.py         # POST /extract/identify, GET /extract/identify/{id}, POST /extract/run
+
+tests/
+├── unit/
+│   └── test_vision.py      # 17 unit tests for vision service
+└── integration/
+    └── test_identify.py    # 14 integration tests for identify endpoints
+```
+
+### Files Modified
+```
+.env.example                # Added OPENAI_API_KEY, OPENAI_MODEL, VISION_TIMEOUT, IDENTIFICATION_TTL
+backend/app/config.py       # Added OpenAI settings
+backend/app/main.py         # Registered identify router
+pyproject.toml              # Added openai>=1.12.0 dependency
+docs/phase_5_plan.md        # Full API contract and design
+```
+
+### Commands to Verify
+```bash
+# Install new dependency
+pip install -e .
+
+# Run all tests with coverage
+pytest tests/ -v --tb=short --cov=backend --cov-report=term-missing --cov-fail-under=80
+
+# Expected output: 124 passed, 92% coverage
+```
+
+### API Endpoints Added
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/extract/identify` | Step 1: Identify visual elements in image/PDF |
+| GET | `/extract/identify/{id}` | Retrieve existing identification |
+| POST | `/extract/run` | Step 2: Extract data from selected items |
+
+### Two-Step Workflow
+1. **Identify**: Vision LLM detects elements (charts, tables, KPIs), returns type/title/bbox/confidence
+2. **Confirm**: User selects/modifies/adds items
+3. **Extract**: Vision LLM extracts structured data from confirmed items
+
+### Supported Element Types
+- `bar_chart`, `grouped_bar_chart`, `stacked_bar_chart`
+- `line_chart`, `multi_line_chart`
+- `pie_chart`, `table`, `kpi_panel`, `map_data`, `other`
+
+### Test Results
+```
+124 passed, 92% coverage
+- Unit tests: 17 vision service tests (mocked OpenAI)
+- Integration tests: 14 identify endpoint tests (mocked)
+- All previous tests still passing
+```
+
+### Decisions
+- Used GPT-4o (configurable via OPENAI_MODEL env var)
+- Identifications expire after IDENTIFICATION_TTL seconds (default 3600)
+- User can modify title/type, add new items with manual bbox
+- Optional merge_datasets flag to combine multiple extractions
+
+### Next Steps
+- [ ] Test with real OpenAI API on demo assets
+- [ ] Merge to main after validation
+- [ ] Frontend integration for element selection UI
+
+---
+
+## [2026-02-08] Phase 5 — Granularity Options Added
+
+### Context
+Added extraction granularity options to control how data is extracted from time series charts. Users can now choose between annotated-only values, full granular data, or full data with source tracking.
+
+### New Feature: `options.granularity`
+
+| Option | Rows | Description |
+|--------|------|-------------|
+| `annotated_only` | ~4 | Only explicitly labeled values |
+| `full` | ~37 | All data points (monthly for time series) |
+| `full_with_source` | ~37 | All data + `source` column (annotated/estimated) |
+
+### API Usage
+```json
+POST /extract/run
+{
+  "identification_id": "ident-xyz",
+  "items": [{"item_id": "item-1"}],
+  "options": {
+    "granularity": "full_with_source"
+  }
+}
+```
+
+### Example Output (`full_with_source`)
+```json
+{
+  "columns": ["Year", "Month", "Cases", "source"],
+  "rows": [
+    {"Year": 2023, "Month": "Jan", "Cases": 0, "source": "estimated"},
+    {"Year": 2023, "Month": "Aug", "Cases": 63, "source": "annotated"}
+  ]
+}
+```
+
+### Files Modified
+```
+backend/app/schemas/identification.py  # Added Granularity enum, ExtractionOptions
+backend/app/services/vision.py         # 3 specialized prompts per granularity
+docs/phase_5_plan.md                   # Updated with granularity documentation
+```
+
+### Commands to Test
+```bash
+# annotated_only - only labeled values
+curl -X POST "http://127.0.0.1:8001/extract/run" \
+  -H "Content-Type: application/json" \
+  -d '{"identification_id": "...", "items": [...], "options": {"granularity": "annotated_only"}}'
+
+# full_with_source - all values with source tracking
+curl -X POST "http://127.0.0.1:8001/extract/run" \
+  -H "Content-Type: application/json" \
+  -d '{"identification_id": "...", "items": [...], "options": {"granularity": "full_with_source"}}'
+```
+
+### Value for Human-in-the-Loop
+The `source` column enables the Review UI to:
+- Highlight estimated values (need verification)
+- Show annotated values as trusted
+- Focus user attention on uncertain data points
