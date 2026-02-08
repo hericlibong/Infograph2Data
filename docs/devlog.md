@@ -705,3 +705,67 @@ pytest tests/ -v --tb=short --cov=backend --cov-report=term-missing --cov-fail-u
 - [ ] Test with real OpenAI API on demo assets
 - [ ] Merge to main after validation
 - [ ] Frontend integration for element selection UI
+
+---
+
+## [2026-02-08] Phase 5 — Granularity Options Added
+
+### Context
+Added extraction granularity options to control how data is extracted from time series charts. Users can now choose between annotated-only values, full granular data, or full data with source tracking.
+
+### New Feature: `options.granularity`
+
+| Option | Rows | Description |
+|--------|------|-------------|
+| `annotated_only` | ~4 | Only explicitly labeled values |
+| `full` | ~37 | All data points (monthly for time series) |
+| `full_with_source` | ~37 | All data + `source` column (annotated/estimated) |
+
+### API Usage
+```json
+POST /extract/run
+{
+  "identification_id": "ident-xyz",
+  "items": [{"item_id": "item-1"}],
+  "options": {
+    "granularity": "full_with_source"
+  }
+}
+```
+
+### Example Output (`full_with_source`)
+```json
+{
+  "columns": ["Year", "Month", "Cases", "source"],
+  "rows": [
+    {"Year": 2023, "Month": "Jan", "Cases": 0, "source": "estimated"},
+    {"Year": 2023, "Month": "Aug", "Cases": 63, "source": "annotated"}
+  ]
+}
+```
+
+### Files Modified
+```
+backend/app/schemas/identification.py  # Added Granularity enum, ExtractionOptions
+backend/app/services/vision.py         # 3 specialized prompts per granularity
+docs/phase_5_plan.md                   # Updated with granularity documentation
+```
+
+### Commands to Test
+```bash
+# annotated_only - only labeled values
+curl -X POST "http://127.0.0.1:8001/extract/run" \
+  -H "Content-Type: application/json" \
+  -d '{"identification_id": "...", "items": [...], "options": {"granularity": "annotated_only"}}'
+
+# full_with_source - all values with source tracking
+curl -X POST "http://127.0.0.1:8001/extract/run" \
+  -H "Content-Type: application/json" \
+  -d '{"identification_id": "...", "items": [...], "options": {"granularity": "full_with_source"}}'
+```
+
+### Value for Human-in-the-Loop
+The `source` column enables the Review UI to:
+- Highlight estimated values (need verification)
+- Show annotated values as trusted
+- Focus user attention on uncertain data points
