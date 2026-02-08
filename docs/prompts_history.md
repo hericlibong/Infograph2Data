@@ -15,6 +15,7 @@
 6. [Test Suite: Plan Request (No Implementation)](#6-test-suite-plan-request-no-implementation)
 7. [Test Suite: Plan Update Request](#7-test-suite-plan-update-request)
 8. [Test Suite: Implementation Validation](#8-test-suite-implementation-validation)
+9. [Phase 5: Vision LLM Extraction — Plan Request](#9-phase-5-vision-llm-extraction--plan-request)
 
 ---
 
@@ -376,6 +377,85 @@ Rules while implementing:
 | 6 | Testing | Plan Request | Test plan documented (66 tests planned) |
 | 7 | Testing | Update Request | Coverage policy added (80% threshold) |
 | 8 | Testing | Implementation Go | 93 tests implemented, 91.86% coverage achieved |
+| 9 | Phase 5 | Plan Request | Vision LLM 2-step extraction workflow designed |
+
+---
+
+## 9. Phase 5: Vision LLM Extraction — Plan Request
+
+**Type:** Planning Request  
+**Phase:** Phase 5 (Vision LLM Extraction)  
+**Date:** 2026-02-08
+
+### Context
+
+After completing Phases 1-4 (foundation, upload, extraction, review/export) and the test suite, evaluation revealed that the current extraction logic only works for PDFs with embedded text layers. The core value proposition — extracting data from infographics, charts, and screenshots — requires Vision LLM integration.
+
+Sample files were provided in `demo_assets/` covering multiple use cases:
+- PNG/JPG screenshots of charts and infographics
+- Multi-page PDFs with embedded infographics
+- Various chart types: bar, grouped bar, stacked bar, line, pie, KPI panels
+
+### Prompt
+
+```
+AC — We need to implement Vision LLM extraction to fulfill the core value proposition.
+
+Context:
+- Current extraction only works for PDFs with text layers (table parsing).
+- For infographics, charts, and image captures, we need Vision LLM (GPT-4o).
+- Sample files provided in demo_assets/ for testing.
+
+Use cases to support:
+1) User captures a screenshot of a figure from an online article/document → gets PNG, JPG, or other image format → extract numeric data.
+2) User uploads a multi-page PDF with infographics → select pages → extract data from each.
+
+Requirements for the extraction workflow (TWO-STEP process):
+
+STEP 1 — IDENTIFICATION:
+- Vision LLM analyzes the image/page
+- Detects all distinct visual elements (charts, tables, KPI panels, etc.)
+- For each element, returns:
+  - type (bar_chart, pie_chart, line_chart, table, kpi_panel, etc.)
+  - title (if visible)
+  - description
+  - data_preview (estimated structure)
+  - bbox (bounding box coordinates for frontend highlighting)
+  - confidence score
+  - warnings (if any accuracy concerns)
+- User reviews the detection, can:
+  - Select/deselect elements to extract
+  - Modify title or type
+  - Add a missed element (with manual bbox)
+- User confirms before proceeding
+
+STEP 2 — EXTRACTION:
+- Vision LLM extracts structured data from confirmed elements
+- Returns dataset(s) with columns + rows
+- Option to merge multiple elements into a single dataset
+
+Additional requirements:
+- Granularity: Detect separate elements (e.g., 4 items in a dense infographic, not 1 merged item)
+- Bbox: Return coordinates for each detected element
+- User modifications: Allow both select/deselect AND modify title/type/add missing
+- Dataset merge: Optional, user choice
+
+Deliverables:
+1) Create docs/phase_5_plan.md with:
+   - Complete API contract (request/response for both steps)
+   - Element type taxonomy
+   - Vision LLM prompts (identification + extraction)
+   - Implementation tasks
+   - Error handling
+
+2) Do NOT implement yet — plan only, await validation.
+
+Constraints:
+- Keep run command unchanged: uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8001
+- API key via environment variable (OPENAI_API_KEY)
+- No secrets committed (.env.example only)
+- GPT-4o as the Vision LLM model
+```
 
 ---
 
@@ -399,3 +479,4 @@ Rules while implementing:
 ---
 
 *Document generated: 2026-02-06*
+*Last updated: 2026-02-08*
