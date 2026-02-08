@@ -21,6 +21,14 @@ class ElementType(str, Enum):
     OTHER = "other"
 
 
+class Granularity(str, Enum):
+    """Extraction granularity options for time series data."""
+
+    ANNOTATED_ONLY = "annotated_only"  # Only explicitly labeled values
+    FULL = "full"  # All data points (annotated + estimated)
+    FULL_WITH_SOURCE = "full_with_source"  # All data points with source column
+
+
 class BoundingBox(BaseModel):
     """Bounding box coordinates for a detected element."""
 
@@ -69,13 +77,24 @@ class ItemSelection(BaseModel):
     bbox: BoundingBox | None = Field(None, description="Required for user-added items")
 
 
+class ExtractionOptions(BaseModel):
+    """Options for data extraction."""
+
+    merge_datasets: bool = Field(default=False, description="Merge all extractions into one dataset")
+    output_language: str = Field(default="en", description="Output language for column names")
+    granularity: Granularity = Field(
+        default=Granularity.FULL,
+        description="Data granularity: annotated_only, full, or full_with_source",
+    )
+
+
 class ExtractRunRequest(BaseModel):
     """Request to extract data from confirmed items."""
 
     identification_id: str = Field(..., description="ID from identification step")
     items: list[ItemSelection] = Field(..., min_length=1, description="Items to extract")
-    options: dict = Field(
-        default_factory=lambda: {"merge_datasets": False, "output_language": "en"},
+    options: ExtractionOptions = Field(
+        default_factory=ExtractionOptions,
         description="Extraction options",
     )
 

@@ -62,7 +62,38 @@ Important rules:
 - If no visual elements found, return {"detected_items": [], "image_width": ..., "image_height": ...}
 """
 
-EXTRACTION_PROMPT_TEMPLATE = """You are a data extraction assistant. Extract structured data from the specified elements in this image.
+EXTRACTION_PROMPT_ANNOTATED_ONLY = """You are a data extraction assistant. Extract structured data from the specified elements in this image.
+
+Elements to extract:
+{items_json}
+
+For each element, extract ONLY the values that are explicitly annotated/labeled on the chart.
+
+Rules:
+- Extract ONLY values that are explicitly shown as text/numbers on the chart
+- Do NOT estimate or read values from axes
+- Column names should be clear and descriptive
+- Each row should be a dictionary with column names as keys
+
+Respond ONLY with valid JSON in this exact format:
+{{
+  "extractions": [
+    {{
+      "item_id": "item-1",
+      "title": "Detected or user-provided title",
+      "columns": ["Category", "Value"],
+      "rows": [
+        {{"Category": "A", "Value": 100}},
+        {{"Category": "B", "Value": 200}}
+      ],
+      "confidence": 0.95,
+      "notes": null
+    }}
+  ]
+}}
+"""
+
+EXTRACTION_PROMPT_FULL = """You are a data extraction assistant. Extract structured data from the specified elements in this image.
 
 Elements to extract:
 {items_json}
@@ -71,10 +102,18 @@ For each element, extract ALL numeric data into a structured table format.
 
 Rules:
 - Use the exact values shown (do not round or approximate)
-- If values must be read from an axis (not annotated), add a note about accuracy
+- If values must be read from an axis (not annotated), estimate them carefully
 - Column names should be clear and descriptive
 - Each row should be a dictionary with column names as keys
 - Preserve the original meaning and context
+
+MANDATORY for time series / line charts:
+1. Identify ALL tick marks on the X-axis (e.g., Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec)
+2. For EACH series/line in the chart, read the Y-value at EVERY X-axis tick mark
+3. You MUST output one row per (series, time_point) combination
+4. Example: 4 years × 12 months = 48 rows minimum
+5. If a value is not annotated, read it from the Y-axis gridlines
+6. DO NOT summarize or aggregate - extract the raw granular data
 
 Respond ONLY with valid JSON in this exact format:
 {{
@@ -82,23 +121,72 @@ Respond ONLY with valid JSON in this exact format:
     {{
       "item_id": "item-1",
       "title": "Detected or user-provided title",
-      "columns": ["Category", "Value", "Percentage"],
+      "columns": ["Year", "Month", "Value"],
       "rows": [
-        {{"Category": "A", "Value": 100, "Percentage": 25.5}},
-        {{"Category": "B", "Value": 200, "Percentage": 50.0}}
+        {{"Year": 2023, "Month": "Jan", "Value": 5}},
+        {{"Year": 2023, "Month": "Feb", "Value": 12}},
+        {{"Year": 2023, "Month": "Mar", "Value": 25}}
       ],
-      "confidence": 0.95,
+      "confidence": 0.85,
+      "notes": "Some values estimated from Y-axis gridlines"
+    }}
+  ]
+}}
+
+Important:
+- Extract EVERY data point at EVERY X-axis position for EVERY series
+- Numbers should be actual numbers, not strings
+- If uncertain, provide your best estimate and lower the confidence score
+"""
+
+EXTRACTION_PROMPT_FULL_WITH_SOURCE = """You are a data extraction assistant. Extract structured data from the specified elements in this image.
+
+Elements to extract:
+{items_json}
+
+For each element, extract ALL numeric data into a structured table format, marking whether each value is annotated or estimated.
+
+Rules:
+- Use the exact values shown (do not round or approximate)
+- Column names should be clear and descriptive
+- Each row should be a dictionary with column names as keys
+- IMPORTANT: Add a "source" column with value "annotated" or "estimated" for each row
+  - "annotated" = value is explicitly shown as text on the chart
+  - "estimated" = value was read from the axis/gridlines
+
+MANDATORY for time series / line charts:
+1. Identify ALL tick marks on the X-axis (e.g., Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec)
+2. For EACH series/line in the chart, read the Y-value at EVERY X-axis tick mark
+3. You MUST output one row per (series, time_point) combination
+4. Example: 4 years × 12 months = 48 rows minimum
+5. Mark each row with source="annotated" or source="estimated"
+
+Respond ONLY with valid JSON in this exact format:
+{{
+  "extractions": [
+    {{
+      "item_id": "item-1",
+      "title": "Detected or user-provided title",
+      "columns": ["Year", "Month", "Value", "source"],
+      "rows": [
+        {{"Year": 2023, "Month": "Jan", "Value": 5, "source": "estimated"}},
+        {{"Year": 2023, "Month": "Feb", "Value": 12, "source": "estimated"}},
+        {{"Year": 2023, "Month": "Aug", "Value": 63, "source": "annotated"}}
+      ],
+      "confidence": 0.85,
       "notes": null
     }}
   ]
 }}
 
 Important:
-- Extract ALL visible data, not just a sample
-- Numbers should be actual numbers, not strings (unless they contain units)
-- Percentages should be numbers (e.g., 25.5 not "25.5%")
-- If a value cannot be read precisely, note it in the "notes" field
+- Extract EVERY data point at EVERY X-axis position for EVERY series
+- Always include the "source" column
+- Numbers should be actual numbers, not strings
 """
+
+# Keep for backward compatibility
+EXTRACTION_PROMPT_TEMPLATE = EXTRACTION_PROMPT_FULL
 
 
 def is_vision_configured() -> bool:
@@ -230,7 +318,7 @@ async def extract_data(
     image_path: Path,
     items: list[ItemSelection],
     stored_items: list[DetectedItem],
-    options: dict,
+    options,
 ) -> list[ExtractedDataset]:
     """
     Extract structured data from specified elements.
@@ -239,13 +327,21 @@ async def extract_data(
         image_path: Path to the image file
         items: User-confirmed items to extract
         stored_items: Original detected items (for reference)
-        options: Extraction options (merge_datasets, output_language)
+        options: Extraction options (ExtractionOptions object or dict)
         
     Returns:
         List of extracted datasets
     """
     if not is_vision_configured():
         raise RuntimeError("Vision LLM not configured. Set OPENAI_API_KEY in environment.")
+    
+    # Handle options (can be ExtractionOptions object or dict for backward compatibility)
+    if hasattr(options, 'granularity'):
+        granularity = options.granularity.value if hasattr(options.granularity, 'value') else options.granularity
+    elif isinstance(options, dict):
+        granularity = options.get('granularity', 'full')
+    else:
+        granularity = 'full'
     
     # Build items description for the prompt
     items_for_prompt = []
@@ -275,9 +371,17 @@ async def extract_data(
     image_data = encode_image_base64(image_path)
     mime_type = get_image_mime_type(image_path)
     
-    prompt = EXTRACTION_PROMPT_TEMPLATE.format(items_json=json.dumps(items_for_prompt, indent=2))
+    # Select prompt based on granularity option
+    if granularity == "annotated_only":
+        prompt_template = EXTRACTION_PROMPT_ANNOTATED_ONLY
+    elif granularity == "full_with_source":
+        prompt_template = EXTRACTION_PROMPT_FULL_WITH_SOURCE
+    else:  # "full" is the default
+        prompt_template = EXTRACTION_PROMPT_FULL
     
-    logger.info(f"Extracting data from {len(items_for_prompt)} elements")
+    prompt = prompt_template.format(items_json=json.dumps(items_for_prompt, indent=2))
+    
+    logger.info(f"Extracting data from {len(items_for_prompt)} elements with granularity={granularity}")
     
     response = client.chat.completions.create(
         model=settings.openai_model,
@@ -355,7 +459,13 @@ async def extract_data(
     logger.info(f"Extracted {len(datasets)} datasets")
     
     # Handle merge option
-    if options.get("merge_datasets") and len(datasets) > 1:
+    merge_datasets = False
+    if hasattr(options, 'merge_datasets'):
+        merge_datasets = options.merge_datasets
+    elif isinstance(options, dict):
+        merge_datasets = options.get("merge_datasets", False)
+    
+    if merge_datasets and len(datasets) > 1:
         datasets = [_merge_datasets(datasets)]
     
     return datasets
