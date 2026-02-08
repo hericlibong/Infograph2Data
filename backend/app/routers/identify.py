@@ -229,7 +229,7 @@ async def run_extraction(request: ExtractRunRequest):
             dataset = Dataset(
                 id=ds.dataset_id,
                 file_id=stored.file_id,
-                page=stored.page,
+                page=stored.page if stored.page is not None else 1,
                 job_id=f"job-vision-{ds.dataset_id}",
                 columns=ds.columns,
                 rows=dataset_rows,
