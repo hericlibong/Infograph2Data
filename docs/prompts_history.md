@@ -480,3 +480,65 @@ Constraints:
 
 *Document generated: 2026-02-06*
 *Last updated: 2026-02-08*
+
+---
+
+## 10. Phase 6: Frontend Implementation — Plan Request + Validation
+
+**Type:** Request + Validation  
+**Phase:** Phase 6 (Frontend)  
+**Date:** 2026-02-08
+
+### Prompt (Request)
+
+```
+The backend Phase 5 (Vision LLM) is complete and merged to main.
+We can now move to the frontend implementation.
+
+Please propose your frontend implementation plan for Infograph2Data.
+
+Context:
+- Stack: Vite + React (as specified in the architecture)
+- Backend API running on localhost:8001
+- Full extraction workflow implemented: Upload → Identify → Confirm → Extract → Review → Export
+
+Requirements:
+- Complete user flow from upload to export
+- Human-in-the-loop review step (edit extracted data before export)
+- Visual display of detected elements with bounding boxes
+- Support for granularity options (annotated_only, full, full_with_source)
+
+Deliverables:
+1) Proposed tech stack (styling, state management, UI components)
+2) Page/route architecture
+3) Phased implementation plan with time estimates
+4) Folder structure proposal
+5) Key technical considerations (bbox scaling, etc.)
+6) Questions for clarification before starting
+```
+
+### Response (Validation + Technical Directives)
+
+```
+Your plan is excellent, validated for both structure and stack.
+
+Here are my answers to your questions and my technical directives to get started:
+
+    Design & UI Library: Use shadcn/ui (based on Radix + Tailwind). I want a 'SaaS Data Tool' look (Clean, minimalist, Inter font).
+
+    State Management: Add Zustand. I need a global store useAppStore to hold the currentFileId, the currentStep (Upload > Identify > Review...), and the workflowOptions (granularity). Do not use 'Prop drilling'.
+
+    Priority: Focus on the complete 'Happy Path'. We will refine error cases later.
+
+Technical Watchpoints (F3 & F5):
+
+    F3 (Identify): Watch out for Bounding Box scaling. The coordinates received from the backend correspond to the actual size of the image/PDF. The frontend will need to calculate the ratio to display them correctly on screen.
+
+    F5 (Review): For the editable table, ensure you can handle cell coloring based on the source (annotated = green/solid, estimated = orange/warning).
+
+Action: You may start Phase F1 (Setup). Initialize the project, install dependencies (including shadcn/ui, zustand, react-query), configure the proxy to port 8001, and create the folder structure.
+```
+
+---
+
+*Last updated: 2026-02-08*

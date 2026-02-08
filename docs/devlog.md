@@ -769,3 +769,119 @@ The `source` column enables the Review UI to:
 - Highlight estimated values (need verification)
 - Show annotated values as trusted
 - Focus user attention on uncertain data points
+
+---
+
+## [2026-02-08] Phase 6 — Frontend Setup (F1)
+
+### Context
+Started frontend implementation with Vite + React + TypeScript. Configured Tailwind CSS, Zustand state management, and proxy to backend.
+
+### Branch
+`feature/phase-6-frontend`
+
+### Files Created
+```
+frontend/
+├── index.html                    # Updated title
+├── vite.config.ts                # Proxy to :8001, path alias
+├── postcss.config.js             # Tailwind PostCSS plugin
+├── tsconfig.app.json             # Added @/ path alias
+├── src/
+│   ├── index.css                 # Tailwind + Inter font
+│   ├── main.tsx                  # React Query provider
+│   ├── App.tsx                   # Main app with step routing
+│   ├── types/
+│   │   └── index.ts              # TypeScript interfaces
+│   ├── store/
+│   │   ├── index.ts              # Re-export
+│   │   └── useAppStore.ts        # Zustand store
+│   ├── api/
+│   │   ├── index.ts              # Re-export
+│   │   └── client.ts             # Axios API client
+│   ├── components/
+│   │   ├── Header.tsx            # Header with health status
+│   │   ├── MainLayout.tsx        # Layout wrapper
+│   │   └── StepIndicator.tsx     # Workflow step indicator
+│   └── pages/
+│       └── UploadPage.tsx        # File upload with drag & drop
+└── package.json                  # Dependencies installed
+```
+
+### Dependencies Installed
+```json
+{
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.3",
+    "@tanstack/react-query": "^5.66.1",
+    "react-router-dom": "^7.1.5",
+    "axios": "^1.7.9",
+    "lucide-react": "^0.475.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.0.6",
+    "@tailwindcss/postcss": "^4.0.6",
+    "postcss": "^8.5.2",
+    "autoprefixer": "^10.4.20"
+  }
+}
+```
+
+### Commands to Run
+
+```bash
+# Start backend (terminal 1)
+cd /home/hericdev/ai_challenges/infograph2data
+source .venv/bin/activate
+uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8001
+
+# Start frontend (terminal 2)
+cd /home/hericdev/ai_challenges/infograph2data/frontend
+npm run dev
+
+# Open browser
+# http://localhost:5173
+```
+
+### Zustand Store Structure
+```typescript
+interface AppState {
+  currentStep: 'upload' | 'identify' | 'select' | 'review' | 'export';
+  currentFileId: string | null;
+  currentFile: FileMetadata | null;
+  currentPage: number;
+  options: {
+    granularity: Granularity;
+    selectedElements: string[];
+  };
+  identification: IdentificationResponse | null;
+  extraction: ExtractRunResponse | null;
+}
+```
+
+### Vite Proxy Configuration
+```typescript
+// vite.config.ts
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://127.0.0.1:8001',
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/api/, ''),
+    },
+  },
+}
+```
+
+### Expected Result
+- Header shows "API: healthy" (green) when backend is running
+- Upload page with drag & drop zone
+- Step indicator shows 5 steps: Upload → Identify → Select → Review → Export
+
+### Next Steps
+- [ ] F2: Identify page with element detection
+- [ ] F3: Select page with bbox visualization
+- [ ] F4: Review page with editable table
+- [ ] F5: Export page with download
