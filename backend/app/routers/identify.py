@@ -1,6 +1,7 @@
 """Router for Vision LLM identification and extraction endpoints."""
 
 import logging
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -32,6 +33,8 @@ async def identify_elements(request: IdentifyRequest):
     Returns a list of detected elements (charts, tables, KPIs) with their
     bounding boxes and metadata. User should confirm which elements to extract.
     """
+    start_time = time.time()
+    
     # Check if Vision LLM is configured
     if not vision.is_vision_configured():
         raise HTTPException(
@@ -104,6 +107,9 @@ async def identify_elements(request: IdentifyRequest):
         # Save to disk
         vision.save_identification(stored)
         
+        # Calculate duration
+        duration_ms = int((time.time() - start_time) * 1000)
+        
         return IdentificationResponse(
             identification_id=identification_id,
             file_id=request.file_id,
@@ -112,6 +118,7 @@ async def identify_elements(request: IdentifyRequest):
             detected_items=detected_items,
             status="awaiting_confirmation",
             expires_at=expires_at,
+            duration_ms=duration_ms,
         )
         
     except Exception as e:
@@ -159,6 +166,8 @@ async def run_extraction(request: ExtractRunRequest):
     Takes the identification ID and a list of items (with optional overrides)
     and extracts structured data from each element.
     """
+    start_time = time.time()
+    
     # Check if Vision LLM is configured
     if not vision.is_vision_configured():
         raise HTTPException(
@@ -244,11 +253,15 @@ async def run_extraction(request: ExtractRunRequest):
         from uuid import uuid4
         job_id = f"job-{uuid4().hex[:12]}"
         
+        # Calculate duration
+        duration_ms = int((time.time() - start_time) * 1000)
+        
         return ExtractRunResponse(
             job_id=job_id,
             identification_id=request.identification_id,
             datasets=extracted_datasets,
             status="completed",
+            duration_ms=duration_ms,
         )
         
     except Exception as e:

@@ -113,6 +113,7 @@ class IdentificationResponse(BaseModel):
     status: str = Field(default="awaiting_confirmation")
     expires_at: datetime = Field(..., description="When this identification expires")
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    duration_ms: int | None = Field(None, description="Processing time in milliseconds")
 
 
 class ExtractionMetadata(BaseModel):
@@ -143,6 +144,7 @@ class ExtractRunResponse(BaseModel):
     datasets: list[ExtractedDataset] = Field(default_factory=list)
     status: str = Field(default="completed")
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    duration_ms: int | None = Field(None, description="Processing time in milliseconds")
 
 
 # --- Storage Schemas ---
