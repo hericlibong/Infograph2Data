@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     storage_dir: str = "backend/app/storage"
     exports_dir: str = "exports"
 
+    # OpenAI Vision LLM settings
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o"
+    vision_timeout: int = 30
+    identification_ttl: int = 3600  # seconds
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
