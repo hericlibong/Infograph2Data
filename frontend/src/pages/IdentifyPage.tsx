@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { useIdentify } from '@/api/hooks';
+import { useIdentify, useExtract } from '@/api/hooks';
 import { getFilePreviewUrl } from '@/api/client';
 import { Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Check, Square, CheckSquare } from 'lucide-react';
 
@@ -13,10 +14,13 @@ export function IdentifyPage() {
     setSelectedElements,
     options, 
     identification,
+    setExtraction,
     setCurrentStep
   } = useAppStore();
   
   const identifyMutation = useIdentify();
+  const extractMutation = useExtract();
+  const [extractError, setExtractError] = useState<string | null>(null);
 
   const totalPages = currentFile?.pages ?? 1;
   const isPdf = currentFile?.mime_type === 'application/pdf';
@@ -42,8 +46,46 @@ export function IdentifyPage() {
     setSelectedElements([]);
   };
 
-  const handleContinue = () => {
-    setCurrentStep('review');
+  // Fetch-on-Interaction: Extract THEN navigate
+  const handleExtract = async (itemIds: string[]) => {
+    if (!identification || itemIds.length === 0) return;
+    
+    setExtractError(null);
+    
+    try {
+      console.log('🚀 Starting extraction for items:', itemIds);
+      
+      // Wait for extraction to complete
+      const result = await extractMutation.mutateAsync({
+        identificationId: identification.identification_id,
+        options: {
+          granularity: options.granularity,
+          selectedItems: itemIds,
+        },
+      });
+      
+      console.log('✅ Extraction completed:', result);
+      
+      // Store result in Zustand
+      setExtraction(result);
+      
+      // Navigate AFTER data is ready
+      setCurrentStep('review');
+    } catch (err) {
+      console.error('❌ Extraction failed:', err);
+      setExtractError(err instanceof Error ? err.message : 'Extraction failed');
+    }
+  };
+
+  const handleExtractSelected = () => {
+    handleExtract(options.selectedElements);
+  };
+
+  const handleExtractAll = () => {
+    if (!identification) return;
+    const allIds = identification.detected_items.map(e => e.item_id);
+    setSelectedElements(allIds);
+    handleExtract(allIds);
   };
 
   if (!currentFile) {
@@ -220,24 +262,35 @@ export function IdentifyPage() {
                   {options.selectedElements.length} of {identification.detected_items.length} elements selected
                 </p>
                 
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleContinue}
-                    disabled={options.selectedElements.length === 0}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Extract Selected ({options.selectedElements.length})
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleSelectAll();
-                      setTimeout(handleContinue, 100);
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Extract All
-                  </button>
-                </div>
+                {extractError && (
+                  <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>Extraction failed: {extractError}</span>
+                  </div>
+                )}
+                
+                {extractMutation.isPending ? (
+                  <div className="flex items-center justify-center gap-3 py-4 bg-blue-50 rounded-lg">
+                    <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                    <span className="text-blue-700 font-medium">Extracting data...</span>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleExtractSelected}
+                      disabled={options.selectedElements.length === 0}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Extract Selected ({options.selectedElements.length})
+                    </button>
+                    <button
+                      onClick={handleExtractAll}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Extract All
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

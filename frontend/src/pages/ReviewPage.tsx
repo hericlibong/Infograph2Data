@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { useExtract } from '@/api/hooks';
-import { Loader2, ArrowLeft, Download, Edit3, Check, X } from 'lucide-react';
+import { ArrowLeft, Download, Edit3, Check, X } from 'lucide-react';
 import type { Dataset } from '@/types';
 
 // Editable cell component
@@ -119,55 +118,11 @@ function DatasetTable({
 export function ReviewPage() {
   const { 
     currentFile, 
-    currentPage,
-    identification, 
-    options,
     extraction,
-    setExtraction,
     setCurrentStep 
   } = useAppStore();
 
-  const extractMutation = useExtract();
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const hasStartedExtraction = useRef(false);
-
-  // Debug: log mutation state
-  console.log('ReviewPage render - mutation state:', {
-    isPending: extractMutation.isPending,
-    isSuccess: extractMutation.isSuccess,
-    isError: extractMutation.isError,
-    hasData: !!extractMutation.data,
-    hasStarted: hasStartedExtraction.current,
-    hasExtraction: !!extraction,
-  });
-
-  // Start extraction when page loads (only once)
-  useEffect(() => {
-    if (!identification || extraction || hasStartedExtraction.current) return;
-    if (extractMutation.isPending) return;
-    
-    hasStartedExtraction.current = true;
-    
-    console.log('🚀 Starting extraction with elements:', options.selectedElements);
-    
-    extractMutation.mutate({
-      identificationId: identification.identification_id,
-      options: {
-        granularity: options.granularity,
-        selectedItems: options.selectedElements,
-      },
-    });
-  }, [identification, extraction, extractMutation.isPending]);
-
-  // Handle extraction success
-  useEffect(() => {
-    console.log('🔄 Checking extraction success:', extractMutation.isSuccess, !!extractMutation.data);
-    if (extractMutation.isSuccess && extractMutation.data) {
-      console.log('✅ Extraction completed:', extractMutation.data);
-      setExtraction(extractMutation.data);
-      setDatasets(extractMutation.data.datasets);
-    }
-  }, [extractMutation.isSuccess, extractMutation.data]);
+  const [datasets, setDatasets] = useState<Dataset[]>(extraction?.datasets || []);
 
   const handleUpdateRow = (datasetIndex: number, rowIndex: number, column: string, value: string) => {
     setDatasets(prev => {
@@ -190,41 +145,17 @@ export function ReviewPage() {
     setCurrentStep('export');
   };
 
-  if (!currentFile || !identification) {
+  // Guard: redirect if no extraction data
+  if (!currentFile || !extraction) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        No identification data. Please go back and identify elements first.
-      </div>
-    );
-  }
-
-  // Loading state
-  if (extractMutation.isPending) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Extracting Data...</h3>
-        <p className="text-gray-500">
-          Analyzing {options.selectedElements.length} elements from {currentFile.filename}
-        </p>
-      </div>
-    );
-  }
-
-  // Error state
-  if (extractMutation.isError) {
-    return (
-      <div className="max-w-lg mx-auto py-12">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-          <h3 className="text-lg font-medium text-red-800 mb-2">Extraction Failed</h3>
-          <p className="text-red-600 mb-4">{extractMutation.error.message}</p>
-          <button
-            onClick={handleBack}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-          >
-            Go Back
-          </button>
-        </div>
+      <div className="text-center py-12">
+        <p className="text-gray-500 mb-4">No extraction data available.</p>
+        <button
+          onClick={handleBack}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Go Back to Identify
+        </button>
       </div>
     );
   }
@@ -243,8 +174,7 @@ export function ReviewPage() {
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Review Extracted Data</h2>
             <p className="text-sm text-gray-500">
-              {currentFile.filename} • {datasets.length} datasets • 
-              {extraction?.duration_ms && ` ${extraction.duration_ms}ms`}
+              {currentFile.filename} • {datasets.length} datasets • {extraction.duration_ms}ms
             </p>
           </div>
         </div>
