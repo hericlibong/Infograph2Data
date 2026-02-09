@@ -74,9 +74,17 @@ export const runExtraction = async (
   identificationId: string,
   options: ExtractionOptions
 ): Promise<ExtractRunResponse> => {
+  // Build items array from selectedItems
+  const items = options.selectedItems?.map(itemId => ({ item_id: itemId })) || [];
+  
   const { data } = await api.post('/extract/run', {
     identification_id: identificationId,
-    options,
+    items,
+    options: {
+      granularity: options.granularity,
+      merge_datasets: options.merge_datasets,
+      output_language: options.output_language,
+    },
   });
   return data;
 };

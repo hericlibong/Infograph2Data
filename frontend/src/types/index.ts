@@ -56,16 +56,17 @@ export interface IdentificationResponse {
 // Dataset from extraction
 export interface Dataset {
   id: string;
-  element_id: string;
+  element_id?: string;
   name: string;
-  strategy_used: string;
+  strategy_used?: string;
   columns: string[];
   rows: Record<string, unknown>[];
 }
 
 // Extraction response
 export interface ExtractRunResponse {
-  id: string;
+  extraction_id: string;
+  identification_id: string;
   file_id: string;
   page: number;
   status: string;
@@ -77,6 +78,7 @@ export interface ExtractRunResponse {
 // Extraction options
 export interface ExtractionOptions {
   granularity: Granularity;
+  selectedItems?: string[];
   merge_datasets?: boolean;
   output_language?: string;
 }

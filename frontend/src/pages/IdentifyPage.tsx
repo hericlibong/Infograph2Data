@@ -1,102 +1,21 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdentify } from '@/api/hooks';
 import { getFilePreviewUrl } from '@/api/client';
-import type { DetectedElement, ImageDimensions } from '@/types';
-import { Loader2, Search, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
-
-interface ImageCanvasProps {
-  fileId: string;
-  page: number;
-  isPdf: boolean;
-  elements: DetectedElement[];
-  selectedElements: string[];
-  onToggleElement: (id: string) => void;
-  imageDimensions: ImageDimensions; // Dimensions used by Vision LLM
-}
-
-function ImageCanvas({ fileId, page, isPdf, elements, selectedElements, onToggleElement, imageDimensions }: ImageCanvasProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [displaySize, setDisplaySize] = useState({ width: 0, height: 0 });
-
-  const previewUrl = getFilePreviewUrl(fileId, page, isPdf);
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    setDisplaySize({ width: img.width, height: img.height });
-  };
-
-  // Recalculate on resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (containerRef.current) {
-        const img = containerRef.current.querySelector('img');
-        if (img) {
-          setDisplaySize({ width: img.width, height: img.height });
-        }
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Scale based on API's image_dimensions (what Vision LLM analyzed)
-  const scale = useMemo(() => {
-    if (imageDimensions.width === 0 || displaySize.width === 0) return 1;
-    return displaySize.width / imageDimensions.width;
-  }, [displaySize.width, imageDimensions.width]);
-
-  return (
-    <div ref={containerRef} className="relative inline-block">
-      <img
-        src={previewUrl}
-        alt="Preview"
-        className="max-w-full h-auto rounded-lg shadow-md"
-        onLoad={handleImageLoad}
-      />
-      {elements.map((element) => {
-        const isSelected = selectedElements.includes(element.item_id);
-        const scaledBbox = {
-          x: element.bbox.x * scale,
-          y: element.bbox.y * scale,
-          width: element.bbox.width * scale,
-          height: element.bbox.height * scale,
-        };
-
-        return (
-          <div
-            key={element.item_id}
-            onClick={() => onToggleElement(element.item_id)}
-            className={`
-              absolute cursor-pointer transition-all
-              ${isSelected 
-                ? 'border-2 border-blue-500 bg-blue-500/20' 
-                : 'border-2 border-gray-400 bg-gray-400/10 hover:border-blue-400 hover:bg-blue-400/10'
-              }
-            `}
-            style={{
-              left: scaledBbox.x,
-              top: scaledBbox.y,
-              width: scaledBbox.width,
-              height: scaledBbox.height,
-            }}
-            title={element.description}
-          >
-            <span className={`
-              absolute -top-6 left-0 text-xs px-2 py-0.5 rounded whitespace-nowrap
-              ${isSelected ? 'bg-blue-500 text-white' : 'bg-gray-600 text-white'}
-            `}>
-              {element.type}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+import { Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Check, Square, CheckSquare } from 'lucide-react';
 
 export function IdentifyPage() {
-  const { currentFile, currentPage, setCurrentPage, setIdentification, toggleElement, options, identification } = useAppStore();
+  const { 
+    currentFile, 
+    currentPage, 
+    setCurrentPage, 
+    setIdentification, 
+    toggleElement, 
+    setSelectedElements,
+    options, 
+    identification,
+    setCurrentStep
+  } = useAppStore();
+  
   const identifyMutation = useIdentify();
 
   const totalPages = currentFile?.pages ?? 1;
@@ -114,6 +33,19 @@ export function IdentifyPage() {
     );
   };
 
+  const handleSelectAll = () => {
+    if (!identification) return;
+    setSelectedElements(identification.detected_items.map(e => e.item_id));
+  };
+
+  const handleSelectNone = () => {
+    setSelectedElements([]);
+  };
+
+  const handleContinue = () => {
+    setCurrentStep('review');
+  };
+
   if (!currentFile) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -123,9 +55,9 @@ export function IdentifyPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left: Image preview with bbox overlay */}
-      <div className="lg:col-span-2">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Left: Image preview (no bbox overlay) */}
+      <div>
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium text-gray-900">{currentFile.filename}</h3>
@@ -155,34 +87,22 @@ export function IdentifyPage() {
           </div>
 
           <div className="flex justify-center bg-gray-100 rounded-lg p-4 min-h-[400px]">
-            {identification?.detected_items ? (
-              <ImageCanvas
-                fileId={currentFile.id}
-                page={currentPage}
-                isPdf={isPdf}
-                elements={identification.detected_items}
-                selectedElements={options.selectedElements}
-                onToggleElement={toggleElement}
-                imageDimensions={identification.image_dimensions}
-              />
-            ) : (
-              <img
-                src={getFilePreviewUrl(currentFile.id, currentPage, isPdf)}
-                alt="Preview"
-                className="max-w-full h-auto max-h-[500px] rounded-lg shadow-md"
-              />
-            )}
+            <img
+              src={getFilePreviewUrl(currentFile.id, currentPage, isPdf)}
+              alt="Preview"
+              className="max-w-full h-auto max-h-[600px] rounded-lg shadow-md"
+            />
           </div>
         </div>
       </div>
 
-      {/* Right: Controls and results */}
+      {/* Right: Controls and element list */}
       <div className="space-y-4">
         {/* Identify button */}
         <div className="bg-white rounded-xl shadow-sm p-4">
           <h3 className="font-medium text-gray-900 mb-3">Step 1: Identify Elements</h3>
           <p className="text-sm text-gray-600 mb-4">
-            Click the button below to analyze the image and detect charts, tables, and other data elements.
+            Analyze the image to detect all data elements (charts, tables, KPIs).
           </p>
           <button
             onClick={handleIdentify}
@@ -197,7 +117,7 @@ export function IdentifyPage() {
             ) : (
               <>
                 <Search className="w-5 h-5" />
-                Identify Elements
+                {identification ? 'Re-analyze' : 'Identify Elements'}
               </>
             )}
           </button>
@@ -210,11 +130,11 @@ export function IdentifyPage() {
           )}
         </div>
 
-        {/* Results */}
+        {/* Results - Element selection */}
         {identification && (
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-gray-900">Detected Elements</h3>
+              <h3 className="font-medium text-gray-900">Step 2: Select Elements</h3>
               <span className="text-sm text-gray-500">
                 {identification.duration_ms}ms
               </span>
@@ -223,50 +143,101 @@ export function IdentifyPage() {
             {identification.detected_items.length === 0 ? (
               <p className="text-sm text-gray-500">No elements detected.</p>
             ) : (
-              <div className="space-y-2">
-                {identification.detected_items.map((element) => {
-                  const isSelected = options.selectedElements.includes(element.item_id);
-                  return (
-                    <div
-                      key={element.item_id}
-                      onClick={() => toggleElement(element.item_id)}
-                      className={`
-                        p-3 rounded-lg cursor-pointer transition-colors border
-                        ${isSelected 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }
-                      `}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-900">
-                          {element.description}
-                        </span>
-                        <span className={`
-                          text-xs px-2 py-0.5 rounded
-                          ${isSelected ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}
+              <>
+                {/* Select all / none buttons */}
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={handleSelectAll}
+                    className="flex items-center gap-1 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    Select All
+                  </button>
+                  <button
+                    onClick={handleSelectNone}
+                    className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
+                  >
+                    <Square className="w-4 h-4" />
+                    Select None
+                  </button>
+                </div>
+
+                {/* Element list with checkboxes */}
+                <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                  {identification.detected_items.map((element) => {
+                    const isSelected = options.selectedElements.includes(element.item_id);
+                    return (
+                      <div
+                        key={element.item_id}
+                        onClick={() => toggleElement(element.item_id)}
+                        className={`
+                          p-3 rounded-lg cursor-pointer transition-colors border flex items-start gap-3
+                          ${isSelected 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }
+                        `}
+                      >
+                        {/* Checkbox */}
+                        <div className={`
+                          w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5
+                          ${isSelected ? 'bg-blue-500 text-white' : 'border-2 border-gray-300'}
                         `}>
-                          {element.type.replace('_', ' ')}
-                        </span>
+                          {isSelected && <Check className="w-3 h-3" />}
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`
+                              text-xs px-2 py-0.5 rounded font-medium
+                              ${isSelected ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}
+                            `}>
+                              {element.type.replace(/_/g, ' ')}
+                            </span>
+                            {element.confidence >= 0.9 && (
+                              <span className="text-xs text-green-600">High confidence</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-900">
+                            {element.description}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {element.data_preview}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
 
+            {/* Action buttons */}
             {identification.detected_items.length > 0 && (
-              <div className="mt-4 pt-4 border-t">
-                <p className="text-sm text-gray-600 mb-2">
-                  {options.selectedElements.length} of {identification.detected_items.length} selected
+              <div className="mt-4 pt-4 border-t space-y-3">
+                <p className="text-sm text-gray-600">
+                  {options.selectedElements.length} of {identification.detected_items.length} elements selected
                 </p>
-                <button
-                  onClick={() => useAppStore.getState().setCurrentStep('select')}
-                  disabled={options.selectedElements.length === 0}
-                  className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  Continue to Extract
-                </button>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleContinue}
+                    disabled={options.selectedElements.length === 0}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Extract Selected ({options.selectedElements.length})
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleSelectAll();
+                      setTimeout(handleContinue, 100);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Extract All
+                  </button>
+                </div>
               </div>
             )}
           </div>
