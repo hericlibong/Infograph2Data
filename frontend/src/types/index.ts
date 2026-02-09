@@ -6,7 +6,7 @@ export type Granularity = 'annotated_only' | 'full' | 'full_with_source';
 
 // File types
 export interface FileMetadata {
-  file_id: string;
+  id: string;
   filename: string;
   mime_type: string;
   size_bytes: number;
@@ -24,22 +24,33 @@ export interface BBox {
 
 // Detected element from identification
 export interface DetectedElement {
-  element_id: string;
-  element_type: string;
+  item_id: string;
+  type: string;
+  title: string | null;
   description: string;
+  data_preview: string;
   bbox: BBox;
-  page?: number;
+  confidence: number;
+  warnings: string[];
+}
+
+// Image dimensions
+export interface ImageDimensions {
+  width: number;
+  height: number;
 }
 
 // Identification response
 export interface IdentificationResponse {
-  id: string;
+  identification_id: string;
   file_id: string;
   page: number;
+  image_dimensions: ImageDimensions;
+  detected_items: DetectedElement[];
   status: string;
-  elements: DetectedElement[];
-  duration_ms: number;
+  expires_at: string;
   created_at: string;
+  duration_ms: number;
 }
 
 // Dataset from extraction

@@ -53,13 +53,17 @@ export const useAppStore = create<AppState>((set) => ({
   setCurrentStep: (step) => set({ currentStep: step }),
   
   setCurrentFile: (file) => set({ 
-    currentFileId: file.file_id, 
+    currentFileId: file.id, 
     currentFile: file,
     currentStep: 'identify',
     currentPage: 1,
   }),
   
-  setCurrentPage: (page) => set({ currentPage: page }),
+  setCurrentPage: (page) => set({ 
+    currentPage: page,
+    identification: null, // Reset when changing page
+    options: { granularity: 'full_with_source', selectedElements: [] }
+  }),
   
   setGranularity: (granularity) => set((state) => ({
     options: { ...state.options, granularity }
@@ -82,7 +86,7 @@ export const useAppStore = create<AppState>((set) => ({
     currentStep: 'select',
     options: { 
       granularity: 'full_with_source',
-      selectedElements: result.elements.map(e => e.element_id)
+      selectedElements: result.detected_items.map(e => e.item_id)
     }
   }),
   

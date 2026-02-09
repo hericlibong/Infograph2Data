@@ -1,6 +1,7 @@
 """File upload endpoints."""
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 
 from backend.app.schemas.upload import FileMetadata, UploadResponse
 from backend.app.services import storage
@@ -63,6 +64,37 @@ async def get_file(file_id: str) -> FileMetadata:
         )
 
     return metadata
+
+
+@router.get(
+    "/{file_id}/content",
+    summary="Get file content",
+    description="Download the raw file content (for images).",
+)
+async def get_file_content(file_id: str) -> Response:
+    """Get the raw file content."""
+    metadata = storage.get_file_metadata(file_id)
+
+    if not metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File not found: {file_id}",
+        )
+
+    file_path = storage.get_file_path(file_id)
+    if not file_path or not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File content not found: {file_id}",
+        )
+
+    content = file_path.read_bytes()
+
+    return Response(
+        content=content,
+        media_type=metadata.mime_type,
+        headers={"Content-Disposition": f'inline; filename="{metadata.filename}"'},
+    )
 
 
 @router.get(

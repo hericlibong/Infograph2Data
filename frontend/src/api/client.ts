@@ -12,6 +12,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 120000, // 2 minutes for Vision LLM calls
 });
 
 // Health check
@@ -39,10 +40,13 @@ export const getFile = async (fileId: string): Promise<FileMetadata> => {
   return data;
 };
 
-// Get file preview URL
-export const getFilePreviewUrl = (fileId: string, page?: number): string => {
-  const pageParam = page ? `?page=${page}` : '';
-  return `/api/files/${fileId}/preview${pageParam}`;
+// Get file preview URL - uses /content for images, /pages/{page}/preview for PDFs
+// For PDFs, use scale=2.0 to match identification analysis
+export const getFilePreviewUrl = (fileId: string, page: number = 1, isPdf: boolean = false): string => {
+  if (isPdf) {
+    return `/api/files/${fileId}/pages/${page}/preview?scale=2`;
+  }
+  return `/api/files/${fileId}/content`;
 };
 
 // Identify elements in file
