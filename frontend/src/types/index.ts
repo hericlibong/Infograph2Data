@@ -55,20 +55,19 @@ export interface IdentificationResponse {
 
 // Dataset from extraction
 export interface Dataset {
-  id: string;
-  element_id?: string;
-  name: string;
-  strategy_used?: string;
+  dataset_id: string;
+  source_item_id?: string;
+  title: string;
+  type?: string;
   columns: string[];
   rows: Record<string, unknown>[];
+  metadata?: Record<string, unknown>;
 }
 
 // Extraction response
 export interface ExtractRunResponse {
-  extraction_id: string;
+  job_id: string;
   identification_id: string;
-  file_id: string;
-  page: number;
   status: string;
   datasets: Dataset[];
   duration_ms: number;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useExtract } from '@/api/hooks';
 import { Loader2, ArrowLeft, Download, Edit3, Check, X } from 'lucide-react';
@@ -80,15 +80,15 @@ function DatasetTable({
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="px-4 py-3 bg-gray-50 border-b">
-        <h3 className="font-medium text-gray-900">{dataset.name}</h3>
-        <p className="text-sm text-gray-500">{dataset.rows.length} rows</p>
+        <h3 className="font-medium text-gray-900">{dataset.title}</h3>
+        <p className="text-sm text-gray-500">{dataset.rows.length} rows • {dataset.type?.replace(/_/g, ' ')}</p>
       </div>
       
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {dataset.columns.filter(c => c !== 'source').map((col) => (
+              {dataset.columns.filter(c => c !== 'source' && c !== 'row_id').map((col) => (
                 <th key={col} className="px-4 py-2 text-left font-medium text-gray-700 border-b">
                   {col}
                 </th>
@@ -98,7 +98,7 @@ function DatasetTable({
           <tbody>
             {dataset.rows.map((row, rowIndex) => (
               <tr key={rowIndex} className="border-b hover:bg-gray-50">
-                {dataset.columns.filter(c => c !== 'source').map((col) => (
+                {dataset.columns.filter(c => c !== 'source' && c !== 'row_id').map((col) => (
                   <td key={col} className="px-4 py-2">
                     <EditableCell
                       value={row[col] as string | number}
@@ -129,11 +129,15 @@ export function ReviewPage() {
 
   const extractMutation = useExtract();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const hasStartedExtraction = useRef(false);
 
-  // Start extraction when page loads
+  // Start extraction when page loads (only once)
   useEffect(() => {
-    if (!identification || extraction) return;
-
+    if (!identification || extraction || hasStartedExtraction.current) return;
+    if (extractMutation.isPending) return;
+    
+    hasStartedExtraction.current = true;
+    
     extractMutation.mutate(
       {
         identificationId: identification.identification_id,
@@ -149,7 +153,7 @@ export function ReviewPage() {
         },
       }
     );
-  }, [identification]);
+  }, [identification, extraction, extractMutation.isPending]);
 
   // Update datasets when extraction changes
   useEffect(() => {
