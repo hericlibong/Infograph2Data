@@ -131,6 +131,16 @@ export function ReviewPage() {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const hasStartedExtraction = useRef(false);
 
+  // Debug: log mutation state
+  console.log('ReviewPage render - mutation state:', {
+    isPending: extractMutation.isPending,
+    isSuccess: extractMutation.isSuccess,
+    isError: extractMutation.isError,
+    hasData: !!extractMutation.data,
+    hasStarted: hasStartedExtraction.current,
+    hasExtraction: !!extraction,
+  });
+
   // Start extraction when page loads (only once)
   useEffect(() => {
     if (!identification || extraction || hasStartedExtraction.current) return;
@@ -138,29 +148,26 @@ export function ReviewPage() {
     
     hasStartedExtraction.current = true;
     
-    extractMutation.mutate(
-      {
-        identificationId: identification.identification_id,
-        options: {
-          granularity: options.granularity,
-          selectedItems: options.selectedElements,
-        },
+    console.log('🚀 Starting extraction with elements:', options.selectedElements);
+    
+    extractMutation.mutate({
+      identificationId: identification.identification_id,
+      options: {
+        granularity: options.granularity,
+        selectedItems: options.selectedElements,
       },
-      {
-        onSuccess: (result) => {
-          setExtraction(result);
-          setDatasets(result.datasets);
-        },
-      }
-    );
+    });
   }, [identification, extraction, extractMutation.isPending]);
 
-  // Update datasets when extraction changes
+  // Handle extraction success
   useEffect(() => {
-    if (extraction?.datasets) {
-      setDatasets(extraction.datasets);
+    console.log('🔄 Checking extraction success:', extractMutation.isSuccess, !!extractMutation.data);
+    if (extractMutation.isSuccess && extractMutation.data) {
+      console.log('✅ Extraction completed:', extractMutation.data);
+      setExtraction(extractMutation.data);
+      setDatasets(extractMutation.data.datasets);
     }
-  }, [extraction]);
+  }, [extractMutation.isSuccess, extractMutation.data]);
 
   const handleUpdateRow = (datasetIndex: number, rowIndex: number, column: string, value: string) => {
     setDatasets(prev => {
@@ -276,7 +283,7 @@ export function ReviewPage() {
         <div className="space-y-6">
           {datasets.map((dataset, index) => (
             <DatasetTable
-              key={dataset.id}
+              key={dataset.dataset_id}
               dataset={dataset}
               onUpdateRow={(rowIndex, column, value) => 
                 handleUpdateRow(index, rowIndex, column, value)

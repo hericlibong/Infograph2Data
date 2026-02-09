@@ -15,6 +15,18 @@ const api = axios.create({
   timeout: 120000, // 2 minutes for Vision LLM calls
 });
 
+// Debug interceptors
+api.interceptors.response.use(
+  (response) => {
+    console.log(`✅ API Response [${response.config.method?.toUpperCase()} ${response.config.url}]:`, response.status, response.data);
+    return response;
+  },
+  (error) => {
+    console.error(`❌ API Error [${error.config?.method?.toUpperCase()} ${error.config?.url}]:`, error.message, error.response?.data);
+    return Promise.reject(error);
+  }
+);
+
 // Health check
 export const getHealth = async (): Promise<HealthResponse> => {
   const { data } = await api.get('/health');
@@ -77,6 +89,12 @@ export const runExtraction = async (
   // Build items array from selectedItems
   const items = options.selectedItems?.map(itemId => ({ item_id: itemId })) || [];
   
+  console.log('runExtraction called with:', { identificationId, items, options });
+  
+  if (items.length === 0) {
+    throw new Error('No items selected for extraction');
+  }
+  
   const { data } = await api.post('/extract/run', {
     identification_id: identificationId,
     items,
@@ -86,6 +104,7 @@ export const runExtraction = async (
       output_language: options.output_language,
     },
   });
+  console.log('Extraction response:', data);
   return data;
 };
 
