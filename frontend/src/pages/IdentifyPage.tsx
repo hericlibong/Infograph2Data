@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { useIdentify, useExtract } from '@/api/hooks';
-import { getFilePreviewUrl } from '@/api/client';
+import { useIdentify } from '@/api/hooks';
+import { getFilePreviewUrl, runExtraction } from '@/api/client';
 import { Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Check, Square, CheckSquare } from 'lucide-react';
 
 export function IdentifyPage() {
@@ -19,7 +19,7 @@ export function IdentifyPage() {
   } = useAppStore();
   
   const identifyMutation = useIdentify();
-  const extractMutation = useExtract();
+  const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
 
   const totalPages = currentFile?.pages ?? 1;
@@ -46,22 +46,20 @@ export function IdentifyPage() {
     setSelectedElements([]);
   };
 
-  // Fetch-on-Interaction: Extract THEN navigate
+  // Fetch-on-Interaction: Extract THEN navigate (direct call, no React Query)
   const handleExtract = async (itemIds: string[]) => {
     if (!identification || itemIds.length === 0) return;
     
     setExtractError(null);
+    setIsExtracting(true);
     
     try {
       console.log('🚀 Starting extraction for items:', itemIds);
       
-      // Wait for extraction to complete
-      const result = await extractMutation.mutateAsync({
-        identificationId: identification.identification_id,
-        options: {
-          granularity: options.granularity,
-          selectedItems: itemIds,
-        },
+      // Direct call to API (no React Query mutation)
+      const result = await runExtraction(identification.identification_id, {
+        granularity: options.granularity,
+        selectedItems: itemIds,
       });
       
       console.log('✅ Extraction completed:', result);
@@ -74,6 +72,8 @@ export function IdentifyPage() {
     } catch (err) {
       console.error('❌ Extraction failed:', err);
       setExtractError(err instanceof Error ? err.message : 'Extraction failed');
+    } finally {
+      setIsExtracting(false);
     }
   };
 
@@ -269,10 +269,16 @@ export function IdentifyPage() {
                   </div>
                 )}
                 
-                {extractMutation.isPending ? (
-                  <div className="flex items-center justify-center gap-3 py-4 bg-blue-50 rounded-lg">
-                    <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                {isExtracting ? (
+                  <div className="flex flex-col items-center justify-center gap-2 py-6 bg-blue-50 rounded-lg">
+                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                     <span className="text-blue-700 font-medium">Extracting data...</span>
+                    <span className="text-blue-600 text-sm">
+                      Processing {options.selectedElements.length} element(s) sequentially
+                    </span>
+                    <span className="text-blue-500 text-xs">
+                      This may take 20-60 seconds per element
+                    </span>
                   </div>
                 ) : (
                   <div className="flex gap-2">

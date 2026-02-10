@@ -68,27 +68,52 @@ function EditableCell({
   );
 }
 
-// Dataset table component
+// Dataset table component with improved presentation
 function DatasetTable({ 
   dataset, 
+  datasetIndex,
   onUpdateRow 
 }: { 
   dataset: Dataset;
+  datasetIndex: number;
   onUpdateRow: (rowIndex: number, column: string, value: string) => void;
 }) {
+  const displayColumns = dataset.columns.filter(c => c !== 'source' && c !== 'row_id');
+  const typeLabel = dataset.type?.replace(/_/g, ' ') || 'data';
+  const typeIcon = getTypeIcon(dataset.type);
+  
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div className="px-4 py-3 bg-gray-50 border-b">
-        <h3 className="font-medium text-gray-900">{dataset.title}</h3>
-        <p className="text-sm text-gray-500">{dataset.rows.length} rows • {dataset.type?.replace(/_/g, ' ')}</p>
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      {/* Header with clear labeling */}
+      <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-white border-b">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{typeIcon}</span>
+          <div>
+            <h3 className="font-semibold text-gray-900 text-lg">
+              {dataset.title || `Dataset ${datasetIndex + 1}`}
+            </h3>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                {typeLabel}
+              </span>
+              <span className="text-sm text-gray-500">
+                {dataset.rows.length} rows × {displayColumns.length} columns
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
       
+      {/* Table with better styling */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              {dataset.columns.filter(c => c !== 'source' && c !== 'row_id').map((col) => (
-                <th key={col} className="px-4 py-2 text-left font-medium text-gray-700 border-b">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 border-b text-xs uppercase tracking-wide">
+                #
+              </th>
+              {displayColumns.map((col) => (
+                <th key={col} className="px-4 py-3 text-left font-semibold text-gray-600 border-b text-xs uppercase tracking-wide">
                   {col}
                 </th>
               ))}
@@ -96,8 +121,11 @@ function DatasetTable({
           </thead>
           <tbody>
             {dataset.rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className="border-b hover:bg-gray-50">
-                {dataset.columns.filter(c => c !== 'source' && c !== 'row_id').map((col) => (
+              <tr key={rowIndex} className={`border-b ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+                <td className="px-4 py-2 text-gray-400 text-xs">
+                  {rowIndex + 1}
+                </td>
+                {displayColumns.map((col) => (
                   <td key={col} className="px-4 py-2">
                     <EditableCell
                       value={row[col] as string | number}
@@ -113,6 +141,21 @@ function DatasetTable({
       </div>
     </div>
   );
+}
+
+// Helper function to get icon for data type
+function getTypeIcon(type?: string): string {
+  switch (type) {
+    case 'line_chart': return '📈';
+    case 'bar_chart': return '📊';
+    case 'pie_chart': return '🥧';
+    case 'stacked_bar_chart': return '📊';
+    case 'grouped_bar_chart': return '📊';
+    case 'kpi_panel': return '🔢';
+    case 'table': return '📋';
+    case 'time_series': return '📅';
+    default: return '📄';
+  }
 }
 
 export function ReviewPage() {
@@ -215,6 +258,7 @@ export function ReviewPage() {
             <DatasetTable
               key={dataset.dataset_id}
               dataset={dataset}
+              datasetIndex={index}
               onUpdateRow={(rowIndex, column, value) => 
                 handleUpdateRow(index, rowIndex, column, value)
               }

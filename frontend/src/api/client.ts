@@ -12,7 +12,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 120000, // 2 minutes for Vision LLM calls
+  timeout: 300000, // 5 minutes for Vision LLM calls
 });
 
 // Debug interceptors
@@ -81,31 +81,80 @@ export const getIdentification = async (
   return data;
 };
 
-// Run extraction
+// Run extraction with retry
 export const runExtraction = async (
   identificationId: string,
   options: ExtractionOptions
 ): Promise<ExtractRunResponse> => {
-  // Build items array from selectedItems
-  const items = options.selectedItems?.map(itemId => ({ item_id: itemId })) || [];
+  const selectedItems = options.selectedItems || [];
   
-  console.log('runExtraction called with:', { identificationId, items, options });
-  
-  if (items.length === 0) {
+  if (selectedItems.length === 0) {
     throw new Error('No items selected for extraction');
   }
   
-  const { data } = await api.post('/extract/run', {
+  console.log('runExtraction called with:', { identificationId, selectedItems });
+  
+  // Extract ONE item at a time for stability
+  const allDatasets: ExtractRunResponse['datasets'] = [];
+  let totalDuration = 0;
+  let lastJobId = '';
+  
+  for (const itemId of selectedItems) {
+    console.log(`Extracting item: ${itemId}`);
+    
+    let attempts = 0;
+    const maxAttempts = 3;
+    let success = false;
+    
+    while (attempts < maxAttempts && !success) {
+      attempts++;
+      try {
+        const { data } = await api.post('/extract/run', {
+          identification_id: identificationId,
+          items: [{ item_id: itemId }],
+          options: {
+            granularity: options.granularity,
+            merge_datasets: false,
+            output_language: options.output_language,
+          },
+        });
+        
+        console.log(`✅ Item ${itemId} extracted:`, data.datasets?.length, 'datasets');
+        
+        if (data.datasets) {
+          allDatasets.push(...data.datasets);
+        }
+        totalDuration += data.duration_ms || 0;
+        lastJobId = data.job_id;
+        success = true;
+      } catch (err) {
+        console.warn(`⚠️ Attempt ${attempts}/${maxAttempts} failed for ${itemId}:`, err);
+        if (attempts >= maxAttempts) {
+          console.error(`❌ Giving up on item ${itemId} after ${maxAttempts} attempts`);
+          // Continue with other items instead of failing completely
+        } else {
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+  }
+  
+  if (allDatasets.length === 0) {
+    throw new Error('Failed to extract any data. Please try again.');
+  }
+  
+  const result: ExtractRunResponse = {
+    job_id: lastJobId,
     identification_id: identificationId,
-    items,
-    options: {
-      granularity: options.granularity,
-      merge_datasets: options.merge_datasets,
-      output_language: options.output_language,
-    },
-  });
-  console.log('Extraction response:', data);
-  return data;
+    status: 'completed',
+    datasets: allDatasets,
+    duration_ms: totalDuration,
+    created_at: new Date().toISOString(),
+  };
+  
+  console.log('✅ Extraction completed:', result.datasets.length, 'total datasets');
+  return result;
 };
 
 // Export dataset
