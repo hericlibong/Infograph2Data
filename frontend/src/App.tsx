@@ -2,6 +2,7 @@ import { MainLayout } from './components/MainLayout'
 import { UploadPage } from './pages/UploadPage'
 import { IdentifyPage } from './pages/IdentifyPage'
 import { ReviewPage } from './pages/ReviewPage'
+import { ExportPage } from './pages/ExportPage'
 import { useAppStore } from './store/useAppStore'
 
 function App() {
@@ -13,11 +14,7 @@ function App() {
       {currentStep === 'identify' && <IdentifyPage />}
       {currentStep === 'select' && <IdentifyPage />}
       {currentStep === 'review' && <ReviewPage />}
-      {currentStep === 'export' && (
-        <div className="text-center py-12 text-gray-500">
-          Export step (coming soon)
-        </div>
-      )}
+      {currentStep === 'export' && <ExportPage />}
     </MainLayout>
   )
 }

@@ -999,3 +999,83 @@ frontend/src/pages/ReviewPage.tsx      # Updated EditableCell, SourceFilterBar, 
 cd frontend && npm run build
 # ✓ built in 3.51s
 ```
+
+---
+
+## [2026-02-10] Export Page Implementation (F6)
+
+### Context
+Implemented the final step of the user workflow: Export page allowing users to download extracted data as CSV/JSON ZIP files with full provenance manifest.
+
+### User Flow Completed
+```
+Upload → Identify → Select → Review → Export ✓
+```
+
+### Files Created
+```
+frontend/src/pages/ExportPage.tsx    # Complete export page with download functionality
+```
+
+### Files Modified
+```
+frontend/src/api/client.ts           # Fixed exportDataset() endpoint (was /datasets/{id}/export, now /export/{id})
+frontend/src/App.tsx                 # Added ExportPage import and route
+```
+
+### Features Implemented
+
+| Feature | Description |
+|---------|-------------|
+| Dataset Summary | Shows each dataset with row/column count and source breakdown |
+| Format Selection | Checkboxes for CSV and JSON formats |
+| Download Button | Triggers ZIP download via browser |
+| Success Message | Confirms download with ZIP contents list |
+| Error Handling | Displays error message on failure |
+| Start New | Button to reset workflow and start over |
+| Multi-dataset Support | Separate download buttons for multiple datasets |
+
+### Components Created
+
+1. **DatasetSummary**: Card showing dataset title, dimensions, annotated/estimated counts
+2. **FormatSelector**: Checkboxes for CSV/JSON with validation
+3. **Main ExportPage**: Full layout with header, summaries, download, info note
+
+### API Integration
+```typescript
+// GET /export/{dataset_id}?formats=csv,json
+// Returns: application/zip with data.csv, data.json, manifest.json
+export const exportDataset = async (
+  datasetId: string,
+  formats: string[] = ['csv', 'json']
+): Promise<Blob> => {
+  const { data } = await api.get(`/export/${datasetId}`, {
+    params: { formats: formats.join(',') },
+    responseType: 'blob',
+  });
+  return data;
+};
+```
+
+### Verification
+```bash
+cd frontend && npm run build
+# ✓ 1816 modules transformed
+# ✓ built in 3.40s
+```
+
+### Frontend Status: Complete
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| F1 | Setup & Infrastructure | ✅ |
+| F2 | Upload & File Management | ✅ |
+| F3 | Identification Workflow | ✅ |
+| F4 | Confirmation & Customization | ✅ |
+| F5 | Extraction Results & Review | ✅ |
+| F6 | Export | ✅ |
+
+### Next Steps
+- [ ] End-to-end testing with real extraction
+- [ ] Granularity selector on Identify page (optional enhancement)
+- [ ] Responsive design improvements (optional)

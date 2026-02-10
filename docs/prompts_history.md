@@ -659,6 +659,61 @@ the background and the text.
 | 11 | Stabilization | Bug Fixes | 4 issues identified, 3 resolved, 1 partial |
 | 12 | Review Page | Feature | Source filter (annotated/estimated) implemented |
 | 13 | Review Page | UI/UX | Color contrast improvement applied |
+| 14 | Export Page | Feature | Export page implemented, workflow complete |
+
+---
+
+## 14. Export Page Implementation Request
+
+**Type:** Feature Implementation  
+**Phase:** Phase 6 (Frontend F6)  
+**Date:** 2026-02-10
+
+### Context
+
+All frontend pages were implemented except the Export page. User requested to detail the implementation plan and then proceed with implementation.
+
+### Prompt (User Request)
+
+```
+Could you detail the implementation plan. If everything is OK, we validate and you start.
+```
+
+### Plan Delivered
+
+- Page structure with dataset summaries, format selector, download button
+- API integration with `GET /export/{dataset_id}?formats=csv,json`
+- Components: DatasetSummary, FormatSelector, DownloadButton
+- Browser download trigger via Blob URL
+
+### Prompt (Validation)
+
+```
+You can start the implementation.
+```
+
+### Actions Taken
+
+1. Fixed `exportDataset()` function in `client.ts` (wrong endpoint)
+2. Created `ExportPage.tsx` with full layout and functionality
+3. Updated `App.tsx` to add ExportPage route
+4. Removed unused function to fix TypeScript warning
+5. Verified build passes
+
+### Files Created/Modified
+
+| File | Action |
+|------|--------|
+| `frontend/src/pages/ExportPage.tsx` | Created |
+| `frontend/src/api/client.ts` | Modified (fixed endpoint) |
+| `frontend/src/App.tsx` | Modified (added route) |
+
+### Outcome
+
+- Export page fully functional
+- Complete user workflow: Upload → Identify → Select → Review → Export
+- ZIP download with CSV, JSON, and manifest.json
+- Frontend Phase 6 complete
 
 ---
 

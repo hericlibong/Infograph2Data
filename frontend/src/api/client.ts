@@ -171,13 +171,13 @@ export const runExtraction = async (
   return result;
 };
 
-// Export dataset
+// Export dataset as ZIP
 export const exportDataset = async (
   datasetId: string,
-  format: 'csv' | 'json' = 'csv'
+  formats: string[] = ['csv', 'json']
 ): Promise<Blob> => {
-  const { data } = await api.get(`/datasets/${datasetId}/export`, {
-    params: { format },
+  const { data } = await api.get(`/export/${datasetId}`, {
+    params: { formats: formats.join(',') },
     responseType: 'blob',
   });
   return data;
