@@ -6,7 +6,7 @@ Tests the /extract/identify and /extract/run endpoints with mocked Vision LLM.
 
 import io
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -177,7 +177,7 @@ class TestGetIdentificationEndpoint:
             ],
             image_path="/tmp/test.png",
             status="awaiting_confirmation",
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         vision.save_identification(stored)
 
@@ -198,7 +198,7 @@ class TestGetIdentificationEndpoint:
             detected_items=[],
             image_path="/tmp/test.png",
             status="awaiting_confirmation",
-            expires_at=datetime.utcnow() - timedelta(hours=1),  # Expired
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),  # Expired
         )
         vision.save_identification(stored)
 
@@ -256,7 +256,7 @@ class TestExtractRunEndpoint:
             ],
             image_path=str(image_path),
             status="awaiting_confirmation",
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         vision.save_identification(stored)
         return stored

@@ -7,7 +7,7 @@ No actual API calls are made - all responses are mocked.
 
 import asyncio
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -264,7 +264,7 @@ class TestStorageOperations:
     def test_get_identification_expiry(self):
         """Should return a future datetime."""
         expiry = vision.get_identification_expiry()
-        assert expiry > datetime.utcnow()
+        assert expiry > datetime.now(timezone.utc)
 
     def test_save_and_load_identification(self, tmp_path):
         """Should save and load identification correctly."""
@@ -277,7 +277,7 @@ class TestStorageOperations:
                 detected_items=[],
                 image_path="/tmp/test.png",
                 status="awaiting_confirmation",
-                expires_at=datetime.utcnow() + timedelta(hours=1),
+                expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
             )
 
             vision.save_identification(stored)

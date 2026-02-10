@@ -1,0 +1,84 @@
+# Infograph2Data — Known Issues
+
+This folder documents known issues, their root causes, and solutions.
+
+## Issue Status Legend
+
+| Status | Meaning |
+|--------|---------|
+| ✅ RESOLVED | Issue fixed and verified |
+| ⚠️ PARTIALLY RESOLVED | Mitigations in place, some edge cases remain |
+| ❌ OPEN | Issue identified, fix pending |
+
+---
+
+## Issues Summary
+
+| # | Title | Status | Impact |
+|---|-------|--------|--------|
+| 001 | DateTime Timezone Mismatch | ✅ RESOLVED | Backend crashes on /datasets |
+| 002 | Vision LLM JSON Parsing | ✅ RESOLVED | Extraction fails with JSONDecodeError |
+| 003 | Network Error During Extraction | ✅ RESOLVED | Frontend shows "Network Error" |
+| 004 | Incomplete Data Extraction | ⚠️ PARTIAL | Complex charts may have missing data |
+
+---
+
+## Quick Reference
+
+### Issue 001: DateTime Timezone Mismatch
+- **Symptom**: `/datasets` returns 500 error
+- **Fix**: Normalize datetimes in `list_datasets()`, use `datetime.now(timezone.utc)`
+
+### Issue 002: Vision LLM JSON Parsing
+- **Symptom**: `JSONDecodeError` during extraction
+- **Fix**: Added `_parse_json_response()` with trailing comma removal and fallback parsing
+
+### Issue 003: Network Error During Extraction
+- **Symptom**: "Network Error" in frontend console
+- **Fix**: Added OpenAI API error handling (timeout, connection, API errors) with descriptive messages
+
+### Issue 004: Incomplete Data Extraction
+- **Symptom**: Charts missing data points
+- **Mitigation**: Granularity options, improved prompts, human-in-the-loop review
+- **Status**: Inherent Vision LLM limitation, mitigations help but don't fully solve
+
+---
+
+## How to Report New Issues
+
+Create a new markdown file following this template:
+
+```markdown
+# Issue XXX: Title
+
+## Status: ❌ OPEN / ⚠️ PARTIAL / ✅ RESOLVED
+
+## Problem Description
+What is happening?
+
+### Error Message
+```
+Exact error message
+```
+
+### Root Cause
+Why is this happening?
+
+### Affected Files
+- file1.py
+- file2.ts
+
+## Solution
+How was it fixed? (or proposed fix)
+
+## Verification
+How to verify the fix works?
+
+## Prevention
+How to prevent this in the future?
+```
+
+---
+
+## Last Updated
+2026-02-10

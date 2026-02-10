@@ -55,6 +55,15 @@ def load_dataset(dataset_id: str) -> Dataset | None:
     return Dataset(**data)
 
 
+def _normalize_datetime(dt: datetime | None) -> datetime:
+    """Normalize datetime to UTC-aware for safe comparison."""
+    if dt is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def list_datasets() -> list[Dataset]:
     """List all datasets."""
     datasets_path = get_datasets_path()
@@ -67,7 +76,7 @@ def list_datasets() -> list[Dataset]:
         except Exception:
             continue
 
-    return sorted(datasets, key=lambda d: d.created_at, reverse=True)
+    return sorted(datasets, key=lambda d: _normalize_datetime(d.created_at), reverse=True)
 
 
 def parse_table_from_text(text: str) -> tuple[list[str], list[dict]]:

@@ -1,9 +1,14 @@
 """Schemas for Vision LLM identification and extraction workflow."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from pydantic import BaseModel, Field
+
+
+def _utc_now():
+    """Return current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 
 class ElementType(str, Enum):
@@ -112,7 +117,7 @@ class IdentificationResponse(BaseModel):
     detected_items: list[DetectedItem] = Field(default_factory=list)
     status: str = Field(default="awaiting_confirmation")
     expires_at: datetime = Field(..., description="When this identification expires")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now)
     duration_ms: int | None = Field(None, description="Processing time in milliseconds")
 
 
@@ -143,7 +148,7 @@ class ExtractRunResponse(BaseModel):
     identification_id: str
     datasets: list[ExtractedDataset] = Field(default_factory=list)
     status: str = Field(default="completed")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now)
     duration_ms: int | None = Field(None, description="Processing time in milliseconds")
 
 
@@ -161,4 +166,4 @@ class StoredIdentification(BaseModel):
     image_path: str  # Path to the rendered image used for identification
     status: str = "awaiting_confirmation"
     expires_at: datetime
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now)

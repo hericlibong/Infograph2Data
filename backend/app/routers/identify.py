@@ -2,7 +2,7 @@
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -121,11 +121,18 @@ async def identify_elements(request: IdentifyRequest):
             duration_ms=duration_ms,
         )
         
+    except RuntimeError as e:
+        # Known errors from vision service (timeout, API errors)
+        logger.warning(f"Vision LLM error: {e}")
+        raise HTTPException(
+            status_code=504,
+            detail=str(e),
+        )
     except Exception as e:
-        logger.exception("Vision LLM identification failed")
+        logger.exception("Vision LLM identification failed unexpectedly")
         raise HTTPException(
             status_code=500,
-            detail=f"Vision LLM error: {str(e)}",
+            detail=f"Unexpected error: {str(e)}",
         )
 
 
@@ -140,7 +147,7 @@ async def get_identification(identification_id: str):
         )
     
     # Check expiry
-    if datetime.utcnow() > stored.expires_at:
+    if datetime.now(timezone.utc) > stored.expires_at:
         raise HTTPException(
             status_code=410,
             detail="Identification expired. Please re-identify.",
@@ -184,7 +191,7 @@ async def run_extraction(request: ExtractRunRequest):
         )
     
     # Check expiry
-    if datetime.utcnow() > stored.expires_at:
+    if datetime.now(timezone.utc) > stored.expires_at:
         raise HTTPException(
             status_code=410,
             detail="Identification expired. Please re-identify.",
@@ -263,10 +270,17 @@ async def run_extraction(request: ExtractRunRequest):
             status="completed",
             duration_ms=duration_ms,
         )
-        
+    
+    except RuntimeError as e:
+        # Known errors from vision service (timeout, API errors)
+        logger.warning(f"Vision LLM extraction error: {e}")
+        raise HTTPException(
+            status_code=504,
+            detail=str(e),
+        )
     except Exception as e:
-        logger.exception("Vision LLM extraction failed")
+        logger.exception("Vision LLM extraction failed unexpectedly")
         raise HTTPException(
             status_code=500,
-            detail=f"Vision LLM error: {str(e)}",
+            detail=f"Unexpected error: {str(e)}",
         )

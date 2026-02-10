@@ -3,11 +3,12 @@
 import base64
 import json
 import logging
-from datetime import datetime, timedelta
+import re
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from openai import OpenAI
+from openai import OpenAI, APITimeoutError, APIError, APIConnectionError
 
 from backend.app.config import settings
 from backend.app.schemas.identification import (
@@ -220,6 +221,56 @@ def get_image_mime_type(image_path: Path) -> str:
     return mime_types.get(suffix, "image/png")
 
 
+def _parse_json_response(content: str) -> dict:
+    """
+    Parse JSON from LLM response with error recovery.
+    
+    Handles common issues:
+    - Markdown code blocks (```json ... ```)
+    - Trailing commas
+    - Extra text after JSON
+    """
+    original_content = content
+    
+    # Try to extract JSON from markdown code block
+    if "```json" in content:
+        match = re.search(r'```json\s*([\s\S]*?)\s*```', content)
+        if match:
+            content = match.group(1)
+    elif "```" in content:
+        match = re.search(r'```\s*([\s\S]*?)\s*```', content)
+        if match:
+            content = match.group(1)
+    
+    content = content.strip()
+    
+    # Remove trailing commas (common LLM error)
+    content = re.sub(r',\s*}', '}', content)
+    content = re.sub(r',\s*]', ']', content)
+    
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as first_error:
+        logger.warning(f"JSON parse failed, trying fallback: {first_error}")
+        
+        # Fallback: find JSON object boundaries
+        start = content.find('{')
+        end = content.rfind('}') + 1
+        if start >= 0 and end > start:
+            try:
+                subset = content[start:end]
+                # Clean again
+                subset = re.sub(r',\s*}', '}', subset)
+                subset = re.sub(r',\s*]', ']', subset)
+                return json.loads(subset)
+            except json.JSONDecodeError:
+                pass
+        
+        # Log the problematic content for debugging
+        logger.error(f"Failed to parse JSON response:\n{original_content[:500]}")
+        raise
+
+
 async def identify_elements(image_path: Path) -> tuple[list[DetectedItem], ImageDimensions]:
     """
     Identify visual elements in an image using Vision LLM.
@@ -239,38 +290,42 @@ async def identify_elements(image_path: Path) -> tuple[list[DetectedItem], Image
     
     logger.info(f"Identifying elements in image: {image_path}")
     
-    response = client.chat.completions.create(
-        model=settings.openai_model,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": IDENTIFICATION_PROMPT},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{mime_type};base64,{image_data}",
-                            "detail": "high",
+    try:
+        response = client.chat.completions.create(
+            model=settings.openai_model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": IDENTIFICATION_PROMPT},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{image_data}",
+                                "detail": "high",
+                            },
                         },
-                    },
-                ],
-            }
-        ],
-        max_tokens=4096,
-        timeout=settings.vision_timeout,
-    )
+                    ],
+                }
+            ],
+            max_tokens=4096,
+            timeout=settings.vision_timeout,
+        )
+    except APITimeoutError:
+        logger.error(f"OpenAI API timeout after {settings.vision_timeout}s")
+        raise RuntimeError(f"Vision LLM timeout ({settings.vision_timeout}s). The image may be too complex.")
+    except APIConnectionError as e:
+        logger.error(f"OpenAI API connection error: {e}")
+        raise RuntimeError("Cannot connect to Vision LLM service. Check your internet connection.")
+    except APIError as e:
+        logger.error(f"OpenAI API error: {e}")
+        raise RuntimeError(f"Vision LLM error: {e.message}")
     
     # Parse response
     content = response.choices[0].message.content
     logger.debug(f"Vision LLM response: {content}")
     
-    # Extract JSON from response (handle markdown code blocks)
-    if "```json" in content:
-        content = content.split("```json")[1].split("```")[0]
-    elif "```" in content:
-        content = content.split("```")[1].split("```")[0]
-    
-    data = json.loads(content.strip())
+    data = _parse_json_response(content)
     
     # Build detected items
     items = []
@@ -383,38 +438,42 @@ async def extract_data(
     
     logger.info(f"Extracting data from {len(items_for_prompt)} elements with granularity={granularity}")
     
-    response = client.chat.completions.create(
-        model=settings.openai_model,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{mime_type};base64,{image_data}",
-                            "detail": "high",
+    try:
+        response = client.chat.completions.create(
+            model=settings.openai_model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{image_data}",
+                                "detail": "high",
+                            },
                         },
-                    },
-                ],
-            }
-        ],
-        max_tokens=8192,
-        timeout=settings.vision_timeout,
-    )
+                    ],
+                }
+            ],
+            max_tokens=8192,
+            timeout=settings.vision_timeout,
+        )
+    except APITimeoutError:
+        logger.error(f"OpenAI API timeout after {settings.vision_timeout}s during extraction")
+        raise RuntimeError(f"Extraction timeout ({settings.vision_timeout}s). Try extracting fewer elements.")
+    except APIConnectionError as e:
+        logger.error(f"OpenAI API connection error: {e}")
+        raise RuntimeError("Cannot connect to Vision LLM service. Check your internet connection.")
+    except APIError as e:
+        logger.error(f"OpenAI API error: {e}")
+        raise RuntimeError(f"Vision LLM error: {e.message}")
     
     # Parse response
     content = response.choices[0].message.content
     logger.debug(f"Extraction response: {content}")
     
-    # Extract JSON
-    if "```json" in content:
-        content = content.split("```json")[1].split("```")[0]
-    elif "```" in content:
-        content = content.split("```")[1].split("```")[0]
-    
-    data = json.loads(content.strip())
+    data = _parse_json_response(content)
     
     # Build datasets
     datasets = []
@@ -545,4 +604,4 @@ def create_identification_id() -> str:
 
 def get_identification_expiry() -> datetime:
     """Get expiry time for new identification."""
-    return datetime.utcnow() + timedelta(seconds=settings.identification_ttl)
+    return datetime.now(timezone.utc) + timedelta(seconds=settings.identification_ttl)

@@ -129,12 +129,26 @@ export const runExtraction = async (
         success = true;
       } catch (err) {
         console.warn(`⚠️ Attempt ${attempts}/${maxAttempts} failed for ${itemId}:`, err);
+        
+        // Extract detailed error message from backend
+        let errorDetail = 'Unknown error';
+        if (err && typeof err === 'object' && 'response' in err) {
+          const axiosErr = err as { response?: { data?: { detail?: string } } };
+          errorDetail = axiosErr.response?.data?.detail || errorDetail;
+        }
+        
         if (attempts >= maxAttempts) {
-          console.error(`❌ Giving up on item ${itemId} after ${maxAttempts} attempts`);
-          // Continue with other items instead of failing completely
+          console.error(`❌ Giving up on item ${itemId}: ${errorDetail}`);
+          // Store the last error for reporting
+          if (allDatasets.length === 0) {
+            throw new Error(errorDetail);
+          }
+          // Continue with other items if we have some results
         } else {
-          // Wait before retry
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Wait before retry (exponential backoff)
+          const waitTime = 2000 * attempts;
+          console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       }
     }
