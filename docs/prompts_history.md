@@ -541,4 +541,125 @@ Action: You may start Phase F1 (Setup). Initialize the project, install dependen
 
 ---
 
-*Last updated: 2026-02-08*
+## 11. Stabilization Session — Bug Fixes and Feature Request
+
+**Type:** Bug Investigation + Feature Implementation  
+**Phase:** Stabilization  
+**Date:** 2026-02-10
+
+### Context
+
+User reported that the application was unstable and not ready for demo. Extraction was failing with various errors, and extracted data quality needed improvement.
+
+### Prompt (User Request)
+
+```
+I don't want you to implement the export page yet, but I want you to help me fix the extraction 
+problems and stabilize the application because we noticed it was very unstable and the data is 
+not being extracted correctly. It's out of the question to present the app in this state. 
+It's imperative to fix the problems. So I want you to examine the problems and propose a first 
+solution. Then, I want you to create an "issues" folder where you will detail precisely the 
+problem encountered (in English). If you manage to fix it, detail the solution, otherwise 
+specify that it remains.
+```
+
+### Actions Taken
+
+1. **Investigation**: Analyzed error logs, traced code paths, identified 4 distinct issues
+2. **Issue Documentation**: Created `/issues` folder with detailed markdown files for each issue
+3. **Bug Fixes**: Resolved 3 issues completely, documented 1 as partial (inherent LLM limitation)
+4. **Testing**: Verified all 124 tests pass after fixes
+
+### Outcome
+
+- Issues 001-003: RESOLVED
+- Issue 004: PARTIAL (documented with workarounds)
+- Application now stable for extraction workflow
+
+---
+
+## 12. Source Filter Feature Request
+
+**Type:** Feature Request  
+**Phase:** Review Page Enhancement  
+**Date:** 2026-02-10
+
+### Prompt (User Request)
+
+```
+"granularity with annotated_only doesn't work as a parameter for extraction. It displays with 
+the checkbox once the data is extracted on the review page but cannot be checked, so they 
+cannot be selected for extraction after extraction either. So first, let's allow selecting 
+annotated data. 
+
+User story: when the user has been able to extract their data, they see the annotated data 
+and those that are simply estimated when the dataviz are complex. The user must be able to 
+display only the annotated or estimated data or both depending on their needs before export."
+```
+
+### Actions Taken
+
+1. Created `SourceFilterBar` component with 3 filter options
+2. Added filtering logic to `DatasetTable` component
+3. Implemented row counts per source type
+4. Added visual feedback for active filters
+
+### Outcome
+
+- Users can now filter between "All Data", "Annotated Only", "Estimated Only"
+- Row counts displayed in filter buttons
+- Seamless integration with existing Review page
+
+---
+
+## 13. Color Contrast Improvement Request
+
+**Type:** UI/UX Improvement  
+**Phase:** Review Page Styling  
+**Date:** 2026-02-10
+
+### Prompt (User Request)
+
+```
+Could you contrast the colors a bit more between annotated and estimated data because on a 
+white background they are difficult to distinguish. Try to find a good compromise between 
+the background and the text.
+```
+
+### Actions Taken
+
+1. Updated cell styling with stronger backgrounds (`-100` instead of `-50`)
+2. Added 4px left border as visual indicator
+3. Applied dark text colors (`-900`) for contrast
+4. Updated filter buttons and legend to match new color scheme
+5. Switched from `orange` to `amber` palette for warmer tone
+
+### Outcome
+
+- Clear visual distinction between annotated (green) and estimated (amber) cells
+- Consistent color scheme across all UI elements
+- High contrast maintained on white backgrounds
+
+---
+
+## Summary Table (Updated)
+
+| # | Phase | Type | Key Decision/Outcome |
+|---|-------|------|---------------------|
+| 1 | Pre-Phase | Blueprint Request | Architecture designed, 4-phase plan created |
+| 2 | Phase 1 | Validation + Go | Foundation implemented (FastAPI, CORS, health) |
+| 3 | Phase 2 | Validation + Go | Upload + storage endpoints created |
+| 4 | Phase 3 | Validation + Go | PDF preview + extraction logic implemented |
+| 5 | Phase 4 | Validation + Go | Review + export (ZIP with provenance) completed |
+| 6 | Testing | Plan Request | Test plan documented (66 tests planned) |
+| 7 | Testing | Update Request | Coverage policy added (80% threshold) |
+| 8 | Testing | Implementation Go | 93 tests implemented, 91.86% coverage achieved |
+| 9 | Phase 5 | Plan Request | Vision LLM 2-step extraction workflow designed |
+| 10 | Phase 6 | Frontend Setup | Vite + React + Tailwind + Zustand configured |
+| 11 | Stabilization | Bug Fixes | 4 issues identified, 3 resolved, 1 partial |
+| 12 | Review Page | Feature | Source filter (annotated/estimated) implemented |
+| 13 | Review Page | UI/UX | Color contrast improvement applied |
+
+---
+
+*Last updated: 2026-02-10*

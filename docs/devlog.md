@@ -885,3 +885,117 @@ server: {
 - [ ] F3: Select page with bbox visualization
 - [ ] F4: Review page with editable table
 - [ ] F5: Export page with download
+
+---
+
+## [2026-02-10] Stability Fixes — Issues 001-004
+
+### Context
+Application was unstable during extraction workflow. Users encountered "Network Error" messages, datetime comparison crashes, and JSON parsing failures. Complete investigation and fix session.
+
+### Issues Identified and Resolved
+
+#### Issue 001: DateTime Timezone Mismatch (RESOLVED)
+- **Problem**: `TypeError: can't compare offset-naive and offset-aware datetimes` when listing datasets
+- **Root Cause**: Mixed use of `datetime.utcnow()` (naive) and `datetime.now(timezone.utc)` (aware)
+- **Fix**: Added `_normalize_datetime()` helper in `extractor.py`, replaced all `datetime.utcnow()` calls
+
+#### Issue 002: Vision LLM JSON Parsing Failures (RESOLVED)
+- **Problem**: `JSONDecodeError` when parsing GPT-4o responses with trailing commas or extra text
+- **Root Cause**: LLM occasionally returns malformed JSON or adds explanatory text
+- **Fix**: Created robust `_parse_json_response()` function with regex extraction and fallback parsing
+
+#### Issue 003: Network Error During Extraction (RESOLVED)
+- **Problem**: Frontend showed generic "Network Error" without details
+- **Root Cause**: OpenAI API errors (timeout, connection) not properly caught and formatted
+- **Fix**: Added explicit error handling for `APITimeoutError`, `APIConnectionError`, `APIError` with descriptive messages
+
+#### Issue 004: Incomplete Data Extraction (PARTIAL)
+- **Problem**: Complex charts sometimes return fewer data points than expected
+- **Root Cause**: Inherent Vision LLM limitation with dense infographics
+- **Mitigation**: Documented workarounds (retry, clearer images, manual bbox)
+
+### Files Created
+```
+issues/
+├── README.md                          # Issue index with status
+├── 001_datetime_timezone_mismatch.md  # DateTime bug details
+├── 002_vision_llm_json_parsing.md     # JSON parsing fix details
+├── 003_network_error_extraction.md    # Network error handling
+└── 004_incomplete_data_extraction.md  # Extraction limitations
+```
+
+### Files Modified
+```
+backend/app/services/extractor.py      # Added _normalize_datetime() helper
+backend/app/services/vision.py         # Added _parse_json_response(), error handling
+backend/app/routers/identify.py        # HTTP 504 for known timeout errors
+backend/app/schemas/identification.py  # Replaced datetime.utcnow with _utc_now()
+tests/integration/test_identify.py     # Fixed deprecated datetime usage
+tests/unit/test_vision.py              # Fixed deprecated datetime usage
+frontend/src/api/client.ts             # Improved error message extraction
+```
+
+### Test Results
+```
+124 passed, 89% coverage
+All tests pass after fixes
+```
+
+---
+
+## [2026-02-10] Source Filter Feature — Review Page
+
+### Context
+User story: After extraction, users see both annotated (from chart labels) and estimated (from axis reading) data. Users need to filter and select which data types to display before export.
+
+### Feature Implemented
+- **SourceFilterBar component**: 3 filter buttons (All Data, Annotated Only, Estimated Only)
+- **Row counts**: Display count per source type in filter buttons
+- **Filtering logic**: DatasetTable filters rows based on `source` column
+- **Visual feedback**: Descriptive messages when filter is active
+
+### Files Modified
+```
+frontend/src/pages/ReviewPage.tsx      # Added SourceFilterBar, filter state, filtering logic
+```
+
+### UI Elements
+- Filter buttons with icons and row counts
+- Active state styling (filled background)
+- Empty state message when no rows match filter
+
+---
+
+## [2026-02-10] Color Contrast Improvement — Review Page
+
+### Context
+User feedback: Annotated (green) and estimated (orange) cells were difficult to distinguish on white background.
+
+### Changes Applied
+
+| Element | Before | After |
+|---------|--------|-------|
+| Annotated cells | `bg-green-50` | `bg-green-100 border-l-4 border-green-600 text-green-900` |
+| Estimated cells | `bg-orange-50` | `bg-amber-100 border-l-4 border-amber-500 text-amber-900` |
+| Filter buttons (active) | Basic styling | Shadow, bold borders, white text |
+| Filter buttons (inactive) | White background | Tinted background matching source color |
+| Stats badges | Light colors | `border` + stronger text colors |
+| Legend | Thin borders | `border-2` + larger swatches |
+
+### Design Decisions
+- Used 4px left border as strong visual indicator
+- Switched from `orange` to `amber` palette (warmer, more readable)
+- Added `font-medium` to cell text for better readability
+- Consistent color scheme across filter bar, cells, and legend
+
+### Files Modified
+```
+frontend/src/pages/ReviewPage.tsx      # Updated EditableCell, SourceFilterBar, legend styling
+```
+
+### Verification
+```bash
+cd frontend && npm run build
+# ✓ built in 3.51s
+```
