@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useAppStore, type SourceFilter } from '@/store/useAppStore';
-import { ArrowLeft, Download, Edit3, Check, X, Filter, Eye, EyeOff } from 'lucide-react';
+import { updateDataset } from '@/api/client';
+import { ArrowLeft, Download, Edit3, Check, X, Filter, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
 import type { Dataset } from '@/types';
 
 // Editable cell component
@@ -285,6 +286,28 @@ export function ReviewPage() {
   } = useAppStore();
 
   const [datasets, setDatasets] = useState<Dataset[]>(extraction?.datasets || []);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  
+  // Debounce timer ref
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Persist dataset to backend
+  const persistDataset = useCallback(async (dataset: Dataset) => {
+    try {
+      setSaveStatus('saving');
+      await updateDataset(dataset.dataset_id, {
+        columns: dataset.columns,
+        rows: dataset.rows,
+      });
+      setSaveStatus('saved');
+      // Reset to idle after 2 seconds
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (err) {
+      console.error('Failed to save dataset:', err);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
+  }, []);
 
   // Calculate total counts across all datasets
   const totalCounts = useMemo(() => {
@@ -312,9 +335,27 @@ export function ReviewPage() {
           i === rowIndex ? { ...row, [column]: value } : row
         ),
       };
+      
+      // Debounced save to backend (1 second delay)
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+      saveTimerRef.current = setTimeout(() => {
+        persistDataset(updated[datasetIndex]);
+      }, 1000);
+      
       return updated;
     });
   };
+  
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleBack = () => {
     setCurrentStep('identify');
@@ -358,13 +399,35 @@ export function ReviewPage() {
           </div>
         </div>
         
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-        >
-          <Download className="w-5 h-5" />
-          Export
-        </button>
+        <div className="flex items-center gap-4">
+          {/* Save status indicator */}
+          {saveStatus === 'saving' && (
+            <span className="flex items-center gap-2 text-sm text-blue-600">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Saving...
+            </span>
+          )}
+          {saveStatus === 'saved' && (
+            <span className="flex items-center gap-2 text-sm text-green-600">
+              <CheckCircle2 className="w-4 h-4" />
+              Saved
+            </span>
+          )}
+          {saveStatus === 'error' && (
+            <span className="flex items-center gap-2 text-sm text-red-600">
+              <X className="w-4 h-4" />
+              Save failed
+            </span>
+          )}
+          
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            <Download className="w-5 h-5" />
+            Export
+          </button>
+        </div>
       </div>
 
       {/* Source Filter */}

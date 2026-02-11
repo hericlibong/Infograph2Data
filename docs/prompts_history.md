@@ -788,7 +788,110 @@ Can you create an issue and propose the solution to implement this?
 | 13 | Review Page | UI/UX | Color contrast improvement applied |
 | 14 | Export Page | Feature | Export page implemented, workflow complete |
 | 15 | Export | Bug Fix | Issue 005 resolved, filter respected in export |
+| 16 | Review/Export | Bug Fix | Issues 007+008 resolved, edits persisted to backend |
 
 ---
 
-*Last updated: 2026-02-10*
+## 16. Review Edits Persistence Bug Fix (Issues 007 + 008)
+
+**Type:** Bug Fix  
+**Phase:** Stabilization  
+**Date:** 2026-02-11
+
+### Context
+
+Analysis revealed that user edits made on the ReviewPage were stored only in React local state and never sent to the backend. This caused two critical issues:
+
+- **Issue 007**: Edits lost on page refresh
+- **Issue 008**: Export downloaded unedited original data
+
+### Prompt (User Request)
+
+```
+ok peux tu créer des issues pour y intégrer les bugs que tu as cités. Tous les bugs. Tu peux 
+les intégrer 1 fichier à la suite de ceux qui sont déjà dans le dossier. Tu les écris en anglais. 
+Une fois que c'est fait on va les régler un par un.
+```
+
+Then after issues were created:
+
+```
+ok allons tu peux corriger ces deux bugs. N'oublie pas de mettre à jour le README pour documenter 
+la correction et le prompts_history de la docs.
+```
+
+### Actions Taken
+
+1. Added `updateDataset()` function to `frontend/src/api/client.ts`
+2. Modified `ReviewPage.tsx`:
+   - Added debounced save (1 second delay after edit)
+   - Added save status indicator (Saving... / Saved / Failed)
+   - Added cleanup on component unmount
+3. Updated issue files 007 and 008 to RESOLVED
+4. Updated issues/README.md
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `frontend/src/api/client.ts` | Added `updateDataset()` function |
+| `frontend/src/pages/ReviewPage.tsx` | Added debounced persistence + status indicator |
+| `issues/007_review_edits_not_persisted.md` | Status: RESOLVED |
+| `issues/008_export_ignores_frontend_edits.md` | Status: RESOLVED |
+| `issues/README.md` | Updated status table |
+
+### Technical Implementation
+
+```typescript
+// Debounced save after each edit (1 second delay)
+const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+const persistDataset = useCallback(async (dataset: Dataset) => {
+  setSaveStatus('saving');
+  await updateDataset(dataset.dataset_id, {
+    columns: dataset.columns,
+    rows: dataset.rows,
+  });
+  setSaveStatus('saved');
+}, []);
+
+// In handleUpdateRow:
+saveTimerRef.current = setTimeout(() => {
+  persistDataset(updated[datasetIndex]);
+}, 1000);
+```
+
+### Outcome
+
+- Issues 007 and 008: RESOLVED
+- User edits now persist to backend automatically
+- Visual feedback shows save status (Saving.../Saved/Failed)
+- Export correctly includes user corrections
+- Frontend build passes
+
+---
+
+## Summary Table (Updated)
+
+| # | Phase | Type | Key Decision/Outcome |
+|---|-------|------|---------------------|
+| 1 | Pre-Phase | Blueprint Request | Architecture designed, 4-phase plan created |
+| 2 | Phase 1 | Validation + Go | Foundation implemented (FastAPI, CORS, health) |
+| 3 | Phase 2 | Validation + Go | Upload + storage endpoints created |
+| 4 | Phase 3 | Validation + Go | PDF preview + extraction logic implemented |
+| 5 | Phase 4 | Validation + Go | Review + export (ZIP with provenance) completed |
+| 6 | Testing | Plan Request | Test plan documented (66 tests planned) |
+| 7 | Testing | Update Request | Coverage policy added (80% threshold) |
+| 8 | Testing | Implementation Go | 93 tests implemented, 91.86% coverage achieved |
+| 9 | Phase 5 | Plan Request | Vision LLM 2-step extraction workflow designed |
+| 10 | Phase 6 | Frontend Setup | Vite + React + Tailwind + Zustand configured |
+| 11 | Stabilization | Bug Fixes | 4 issues identified, 3 resolved, 1 partial |
+| 12 | Review Page | Feature | Source filter (annotated/estimated) implemented |
+| 13 | Review Page | UI/UX | Color contrast improvement applied |
+| 14 | Export Page | Feature | Export page implemented, workflow complete |
+| 15 | Export | Bug Fix | Issue 005 resolved, filter respected in export |
+| 16 | Review/Export | Bug Fix | Issues 007+008 resolved, edits persisted to backend |
+
+---
+
+*Last updated: 2026-02-11*

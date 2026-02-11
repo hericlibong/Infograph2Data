@@ -171,6 +171,14 @@ export const runExtraction = async (
   return result;
 };
 
+// Update dataset (persist edits)
+export const updateDataset = async (
+  datasetId: string,
+  update: { columns?: string[]; rows?: Record<string, unknown>[] }
+): Promise<void> => {
+  await api.put(`/datasets/${datasetId}`, update);
+};
+
 // Export dataset as ZIP
 export const exportDataset = async (
   datasetId: string,
