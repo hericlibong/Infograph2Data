@@ -1,6 +1,6 @@
 # Issue 010: Identification Expiry Not Handled in Frontend
 
-## Status: ❌ OPEN
+## Status: ✅ RESOLVED
 
 ## Problem Description
 

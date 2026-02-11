@@ -25,7 +25,7 @@ This folder documents known issues, their root causes, and solutions.
 | 007 | ReviewPage Edits Not Persisted | ✅ RESOLVED | User edits lost on refresh |
 | 008 | Export Ignores Frontend Edits | ✅ RESOLVED | Export downloads unedited data |
 | 009 | No Confirmation Before Reset | ✅ RESOLVED | Users can lose work accidentally |
-| 010 | Identification Expiry Not Handled | ❌ OPEN | Cryptic error after 1h idle |
+| 010 | Identification Expiry Not Handled | ✅ RESOLVED | Cryptic error after 1h idle |
 
 ---
 
@@ -70,7 +70,7 @@ This folder documents known issues, their root causes, and solutions.
 
 ### Issue 010: Identification Expiry Not Handled
 - **Symptom**: After 1h idle, extraction fails with cryptic 410 error
-- **Fix**: Check `expires_at` before extraction, show user-friendly message
+- **Fix**: Check `expires_at` before extraction, handle HTTP 410, show clear message
 
 ---
 

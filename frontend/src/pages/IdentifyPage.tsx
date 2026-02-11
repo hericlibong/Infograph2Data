@@ -50,6 +50,13 @@ export function IdentifyPage() {
   const handleExtract = async (itemIds: string[]) => {
     if (!identification || itemIds.length === 0) return;
     
+    // Check if identification has expired
+    const expiresAt = new Date(identification.expires_at);
+    if (new Date() > expiresAt) {
+      setExtractError('Identification expired. Please click "Re-analyze" to continue.');
+      return;
+    }
+    
     setExtractError(null);
     setIsExtracting(true);
     
@@ -71,7 +78,13 @@ export function IdentifyPage() {
       setCurrentStep('review');
     } catch (err) {
       console.error('❌ Extraction failed:', err);
-      setExtractError(err instanceof Error ? err.message : 'Extraction failed');
+      // Handle 410 Gone (expired) specifically
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr.response?.status === 410) {
+        setExtractError('Identification expired. Please click "Re-analyze" to continue.');
+      } else {
+        setExtractError(err instanceof Error ? err.message : 'Extraction failed');
+      }
     } finally {
       setIsExtracting(false);
     }

@@ -893,6 +893,7 @@ saveTimerRef.current = setTimeout(() => {
 | 16 | Review/Export | Bug Fix | Issues 007+008 resolved, edits persisted to backend |
 | 17 | Types | Bug Fix | Issue 006 resolved, HealthResponse type corrected |
 | 18 | UX | Bug Fix | Issue 009 resolved, confirmation before reset |
+| 19 | UX | Bug Fix | Issue 010 resolved, expiry handled with clear message |
 
 ---
 
