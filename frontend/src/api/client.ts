@@ -174,10 +174,14 @@ export const runExtraction = async (
 // Export dataset as ZIP
 export const exportDataset = async (
   datasetId: string,
-  formats: string[] = ['csv', 'json']
+  formats: string[] = ['csv', 'json'],
+  sourceFilter: 'all' | 'annotated' | 'estimated' = 'all'
 ): Promise<Blob> => {
   const { data } = await api.get(`/export/${datasetId}`, {
-    params: { formats: formats.join(',') },
+    params: { 
+      formats: formats.join(','),
+      source_filter: sourceFilter,
+    },
     responseType: 'blob',
   });
   return data;

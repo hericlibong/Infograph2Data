@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import type { WorkflowStep, Granularity, FileMetadata, IdentificationResponse, ExtractRunResponse } from '@/types';
 
+// Source filter type for Review/Export pages
+export type SourceFilter = 'all' | 'annotated' | 'estimated';
+
 interface WorkflowOptions {
   granularity: Granularity;
   selectedElements: string[];
@@ -15,6 +18,9 @@ interface AppState {
   
   // Workflow options
   options: WorkflowOptions;
+  
+  // Source filter for Review/Export
+  sourceFilter: SourceFilter;
   
   // Identification result
   identification: IdentificationResponse | null;
@@ -31,6 +37,7 @@ interface AppState {
   toggleElement: (elementId: string) => void;
   setIdentification: (result: IdentificationResponse) => void;
   setExtraction: (result: ExtractRunResponse) => void;
+  setSourceFilter: (filter: SourceFilter) => void;
   reset: () => void;
 }
 
@@ -43,6 +50,7 @@ const initialState = {
     granularity: 'full_with_source' as Granularity,
     selectedElements: [] as string[],
   },
+  sourceFilter: 'all' as SourceFilter,
   identification: null,
   extraction: null,
 };
@@ -93,7 +101,10 @@ export const useAppStore = create<AppState>((set) => ({
   setExtraction: (result) => set({ 
     extraction: result,
     currentStep: 'review',
+    sourceFilter: 'all', // Reset filter when new extraction
   }),
+  
+  setSourceFilter: (filter) => set({ sourceFilter: filter }),
   
   reset: () => set(initialState),
 }));

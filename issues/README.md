@@ -20,6 +20,7 @@ This folder documents known issues, their root causes, and solutions.
 | 002 | Vision LLM JSON Parsing | ✅ RESOLVED | Extraction fails with JSONDecodeError |
 | 003 | Network Error During Extraction | ✅ RESOLVED | Frontend shows "Network Error" |
 | 004 | Incomplete Data Extraction | ⚠️ PARTIAL | Complex charts may have missing data |
+| 005 | Export Ignores Source Filter | ✅ RESOLVED | Export includes all data regardless of filter |
 
 ---
 
@@ -41,6 +42,10 @@ This folder documents known issues, their root causes, and solutions.
 - **Symptom**: Charts missing data points
 - **Mitigation**: Granularity options, improved prompts, human-in-the-loop review
 - **Status**: Inherent Vision LLM limitation, mitigations help but don't fully solve
+
+### Issue 005: Export Ignores Source Filter
+- **Symptom**: Export includes all data even when "Annotated Only" selected
+- **Fix**: Store filter in Zustand, add `source_filter` param to backend, filter rows before export
 
 ---
 

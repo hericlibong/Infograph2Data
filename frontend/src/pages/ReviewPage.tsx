@@ -1,10 +1,7 @@
 import { useState, useMemo } from 'react';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, type SourceFilter } from '@/store/useAppStore';
 import { ArrowLeft, Download, Edit3, Check, X, Filter, Eye, EyeOff } from 'lucide-react';
 import type { Dataset } from '@/types';
-
-// Filter type for source visibility
-type SourceFilter = 'all' | 'annotated' | 'estimated';
 
 // Editable cell component
 function EditableCell({ 
@@ -282,11 +279,12 @@ export function ReviewPage() {
   const { 
     currentFile, 
     extraction,
+    sourceFilter,
+    setSourceFilter,
     setCurrentStep 
   } = useAppStore();
 
   const [datasets, setDatasets] = useState<Dataset[]>(extraction?.datasets || []);
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
 
   // Calculate total counts across all datasets
   const totalCounts = useMemo(() => {

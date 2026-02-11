@@ -1079,3 +1079,64 @@ cd frontend && npm run build
 - [ ] End-to-end testing with real extraction
 - [ ] Granularity selector on Identify page (optional enhancement)
 - [ ] Responsive design improvements (optional)
+
+---
+
+## [2026-02-10] Issue 005: Export Source Filter — RESOLVED
+
+### Context
+User reported that the source filter selection on Review page (Annotated Only / Estimated Only) was not being respected during export. The export always included all data regardless of the filter.
+
+### Root Cause
+The `sourceFilter` state was local to `ReviewPage` component and not shared with `ExportPage`. The backend export endpoint had no filtering capability.
+
+### Solution Implemented
+
+**Frontend Changes:**
+1. Added `sourceFilter` and `setSourceFilter` to Zustand store
+2. Exported `SourceFilter` type from store
+3. `ReviewPage` now uses global store instead of local state
+4. `ExportPage` reads filter from store, passes to API, displays filter indicator
+
+**Backend Changes:**
+1. Added `source_filter` query parameter to `GET /export/{dataset_id}`
+2. Filter rows by `source` field before generating CSV/JSON
+3. Exclude `source` column from export when filtering (cleaner output)
+4. Updated manifest to reflect filtered row count
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `frontend/src/store/useAppStore.ts` | Added `SourceFilter` type, `sourceFilter` state, `setSourceFilter` action |
+| `frontend/src/pages/ReviewPage.tsx` | Import from store, use global state |
+| `frontend/src/pages/ExportPage.tsx` | Read filter, pass to API, display filter indicator |
+| `frontend/src/api/client.ts` | Added `sourceFilter` param to `exportDataset()` |
+| `backend/app/routers/export.py` | Added `source_filter` param, row filtering |
+
+### API Change
+
+```
+GET /export/{dataset_id}?formats=csv,json&source_filter=annotated
+```
+
+| Parameter | Values | Description |
+|-----------|--------|-------------|
+| `source_filter` | `all`, `annotated`, `estimated` | Filter exported rows by source |
+
+### Verification
+```bash
+# Frontend builds
+cd frontend && npm run build
+# ✓ built in 3.75s
+
+# Backend tests pass
+pytest tests/integration/test_export.py -v
+# 8 passed
+```
+
+### User Experience
+- On Export page, if filter is active, shows colored banner:
+  - "Exporting annotated data only — X of Y rows will be exported"
+- Downloaded ZIP contains only filtered rows
+- `source` column removed from export when filtering (cleaner data)

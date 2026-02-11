@@ -9,7 +9,8 @@ import {
   FileText,
   FileJson,
   Package,
-  Loader2
+  Loader2,
+  Filter
 } from 'lucide-react';
 import { exportDataset } from '@/api/client';
 import type { Dataset } from '@/types';
@@ -104,6 +105,7 @@ export function ExportPage() {
   const { 
     currentFile, 
     extraction,
+    sourceFilter,
     reset,
     setCurrentStep 
   } = useAppStore();
@@ -115,22 +117,31 @@ export function ExportPage() {
 
   const datasets = extraction?.datasets || [];
 
-  // Calculate totals
+  // Calculate totals (considering the source filter)
   const totals = useMemo(() => {
     let rows = 0;
     let annotated = 0;
     let estimated = 0;
+    let filteredRows = 0;
     
     datasets.forEach(ds => {
-      rows += ds.rows.length;
       ds.rows.forEach(row => {
-        if (row['source'] === 'annotated') annotated++;
-        else if (row['source'] === 'estimated') estimated++;
+        rows++;
+        if (row['source'] === 'annotated') {
+          annotated++;
+          if (sourceFilter === 'all' || sourceFilter === 'annotated') filteredRows++;
+        } else if (row['source'] === 'estimated') {
+          estimated++;
+          if (sourceFilter === 'all' || sourceFilter === 'estimated') filteredRows++;
+        } else {
+          // Rows without source info
+          filteredRows++;
+        }
       });
     });
     
-    return { rows, annotated, estimated };
-  }, [datasets]);
+    return { rows, annotated, estimated, filteredRows };
+  }, [datasets, sourceFilter]);
 
   const handleFormatChange = (key: 'csv' | 'json', value: boolean) => {
     setFormats(prev => ({ ...prev, [key]: value }));
@@ -151,7 +162,7 @@ export function ExportPage() {
       if (formats.csv) selectedFormats.push('csv');
       if (formats.json) selectedFormats.push('json');
       
-      const blob = await exportDataset(datasetId, selectedFormats);
+      const blob = await exportDataset(datasetId, selectedFormats, sourceFilter);
       
       // Create download link
       const url = window.URL.createObjectURL(blob);
@@ -235,6 +246,23 @@ export function ExportPage() {
             <span className="font-medium">Extracted:</span> {datasets.length} dataset{datasets.length > 1 ? 's' : ''}, {totals.rows} rows total
           </p>
         </div>
+
+        {/* Source filter indicator */}
+        {sourceFilter !== 'all' && (
+          <div className={`p-4 rounded-lg border-2 ${
+            sourceFilter === 'annotated' 
+              ? 'bg-green-50 border-green-300 text-green-800' 
+              : 'bg-amber-50 border-amber-300 text-amber-800'
+          }`}>
+            <div className="flex items-center gap-2 font-medium">
+              <Filter className="w-4 h-4" />
+              Exporting {sourceFilter} data only
+            </div>
+            <p className="text-sm mt-1 opacity-80">
+              {totals.filteredRows} of {totals.rows} rows will be exported
+            </p>
+          </div>
+        )}
 
         {/* Dataset summaries */}
         <div className="space-y-3">

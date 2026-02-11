@@ -717,4 +717,78 @@ You can start the implementation.
 
 ---
 
+## 15. Export Source Filter Bug Fix
+
+**Type:** Bug Fix  
+**Phase:** Issue 005  
+**Date:** 2026-02-10
+
+### Context
+
+User reported that the source filter selection on Review page (Annotated Only / Estimated Only) was not being respected during export.
+
+### Prompt (User Request)
+
+```
+I notice that the choice made in Review is not taken into account by the export. For example, 
+a user who selects only annotated data in the Review phase, when they export they end up with 
+both annotated and estimated data. Normally, they should export what they selected. If they 
+select annotated data, they will only get annotated. If they only select estimated data, 
+they will only get estimated data. If they select both, they will get both.
+
+Can you create an issue and propose the solution to implement this?
+```
+
+### Actions Taken
+
+1. Created Issue 005 with detailed analysis and implementation plan
+2. After validation, implemented the solution:
+   - Added `sourceFilter` to Zustand global store
+   - Updated ReviewPage to use global store
+   - Added `source_filter` query param to backend export endpoint
+   - Updated frontend API client to pass filter
+   - Updated ExportPage to display filter status
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `frontend/src/store/useAppStore.ts` | Added `SourceFilter` type and state |
+| `frontend/src/pages/ReviewPage.tsx` | Use global store |
+| `frontend/src/pages/ExportPage.tsx` | Display filter, pass to API |
+| `frontend/src/api/client.ts` | Added `sourceFilter` param |
+| `backend/app/routers/export.py` | Added `source_filter` param, row filtering |
+| `issues/005_export_ignores_source_filter.md` | Created, then marked RESOLVED |
+
+### Outcome
+
+- Issue 005: RESOLVED
+- Export now respects source filter selection
+- User sees confirmation of filter on Export page
+- All tests pass
+
+---
+
+## Summary Table (Updated)
+
+| # | Phase | Type | Key Decision/Outcome |
+|---|-------|------|---------------------|
+| 1 | Pre-Phase | Blueprint Request | Architecture designed, 4-phase plan created |
+| 2 | Phase 1 | Validation + Go | Foundation implemented (FastAPI, CORS, health) |
+| 3 | Phase 2 | Validation + Go | Upload + storage endpoints created |
+| 4 | Phase 3 | Validation + Go | PDF preview + extraction logic implemented |
+| 5 | Phase 4 | Validation + Go | Review + export (ZIP with provenance) completed |
+| 6 | Testing | Plan Request | Test plan documented (66 tests planned) |
+| 7 | Testing | Update Request | Coverage policy added (80% threshold) |
+| 8 | Testing | Implementation Go | 93 tests implemented, 91.86% coverage achieved |
+| 9 | Phase 5 | Plan Request | Vision LLM 2-step extraction workflow designed |
+| 10 | Phase 6 | Frontend Setup | Vite + React + Tailwind + Zustand configured |
+| 11 | Stabilization | Bug Fixes | 4 issues identified, 3 resolved, 1 partial |
+| 12 | Review Page | Feature | Source filter (annotated/estimated) implemented |
+| 13 | Review Page | UI/UX | Color contrast improvement applied |
+| 14 | Export Page | Feature | Export page implemented, workflow complete |
+| 15 | Export | Bug Fix | Issue 005 resolved, filter respected in export |
+
+---
+
 *Last updated: 2026-02-10*
