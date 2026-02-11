@@ -85,5 +85,5 @@ export interface ExtractionOptions {
 // Health check response
 export interface HealthResponse {
   status: string;
-  timestamp: string;
+  version: string;
 }

@@ -184,7 +184,12 @@ export function ExportPage() {
   };
 
   const handleStartNew = () => {
-    reset();
+    const confirmed = window.confirm(
+      'Are you sure you want to start a new extraction?\n\nAll current work will be lost and cannot be recovered.'
+    );
+    if (confirmed) {
+      reset();
+    }
   };
 
   const handleBackToReview = () => {

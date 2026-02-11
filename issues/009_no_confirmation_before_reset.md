@@ -1,6 +1,6 @@
 # Issue 009: No Confirmation Before Reset
 
-## Status: ❌ OPEN
+## Status: ✅ RESOLVED
 
 ## Problem Description
 

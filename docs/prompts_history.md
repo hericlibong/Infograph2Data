@@ -891,6 +891,8 @@ saveTimerRef.current = setTimeout(() => {
 | 14 | Export Page | Feature | Export page implemented, workflow complete |
 | 15 | Export | Bug Fix | Issue 005 resolved, filter respected in export |
 | 16 | Review/Export | Bug Fix | Issues 007+008 resolved, edits persisted to backend |
+| 17 | Types | Bug Fix | Issue 006 resolved, HealthResponse type corrected |
+| 18 | UX | Bug Fix | Issue 009 resolved, confirmation before reset |
 
 ---
 

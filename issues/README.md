@@ -21,10 +21,10 @@ This folder documents known issues, their root causes, and solutions.
 | 003 | Network Error During Extraction | ✅ RESOLVED | Frontend shows "Network Error" |
 | 004 | Incomplete Data Extraction | ⚠️ PARTIAL | Complex charts may have missing data |
 | 005 | Export Ignores Source Filter | ✅ RESOLVED | Export includes all data regardless of filter |
-| 006 | HealthResponse Type Mismatch | ❌ OPEN | TypeScript type doesn't match API |
+| 006 | HealthResponse Type Mismatch | ✅ RESOLVED | TypeScript type doesn't match API |
 | 007 | ReviewPage Edits Not Persisted | ✅ RESOLVED | User edits lost on refresh |
 | 008 | Export Ignores Frontend Edits | ✅ RESOLVED | Export downloads unedited data |
-| 009 | No Confirmation Before Reset | ❌ OPEN | Users can lose work accidentally |
+| 009 | No Confirmation Before Reset | ✅ RESOLVED | Users can lose work accidentally |
 | 010 | Identification Expiry Not Handled | ❌ OPEN | Cryptic error after 1h idle |
 
 ---
@@ -54,7 +54,7 @@ This folder documents known issues, their root causes, and solutions.
 
 ### Issue 006: HealthResponse Type Mismatch
 - **Symptom**: Frontend TypeScript type expects `timestamp`, backend returns `version`
-- **Fix**: Update `HealthResponse` interface in `types/index.ts`
+- **Fix**: Updated `HealthResponse` interface to use `version: string`
 
 ### Issue 007: ReviewPage Edits Not Persisted
 - **Symptom**: Edits made on ReviewPage are lost on page refresh
@@ -66,7 +66,7 @@ This folder documents known issues, their root causes, and solutions.
 
 ### Issue 009: No Confirmation Before Reset
 - **Symptom**: Clicking "Start New Extraction" immediately clears all work
-- **Fix**: Add confirmation dialog before calling `reset()`
+- **Fix**: Added `window.confirm()` dialog before calling `reset()`
 
 ### Issue 010: Identification Expiry Not Handled
 - **Symptom**: After 1h idle, extraction fails with cryptic 410 error
