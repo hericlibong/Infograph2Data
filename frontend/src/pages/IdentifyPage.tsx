@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdentify } from '@/api/hooks';
 import { getFilePreviewUrl, runExtraction } from '@/api/client';
 import { Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Check, Square, CheckSquare, ArrowLeft, Upload, Clock } from 'lucide-react';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function IdentifyPage() {
   const { 
@@ -180,6 +181,52 @@ export function IdentifyPage() {
     handleExtract(allIds);
   };
 
+  // Keyboard shortcuts
+  const shortcuts = useMemo(() => [
+    {
+      key: 'Enter',
+      ctrl: true,
+      description: 'Submit action',
+      action: () => {
+        if (!identification) {
+          handleIdentify();
+        } else if (options.selectedElements.length > 0 && !isExtracting) {
+          handleExtractSelected();
+        }
+      },
+    },
+    {
+      key: 'ArrowLeft',
+      description: 'Previous page',
+      action: () => {
+        if (totalPages > 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      },
+    },
+    {
+      key: 'ArrowRight',
+      description: 'Next page',
+      action: () => {
+        if (totalPages > 1 && currentPage < totalPages) {
+          setCurrentPage(currentPage + 1);
+        }
+      },
+    },
+    {
+      key: 'a',
+      ctrl: true,
+      description: 'Select all elements',
+      action: () => {
+        if (identification) {
+          handleSelectAll();
+        }
+      },
+    },
+  ], [identification, options.selectedElements.length, isExtracting, totalPages, currentPage]);
+
+  useKeyboardShortcuts(shortcuts, { enabled: !isExtracting });
+
   if (!currentFile) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -197,29 +244,30 @@ export function IdentifyPage() {
 
   return (
     <div className="space-y-4">
-      {/* Back button */}
-      <div className="flex items-center gap-4">
+      {/* Back button and header - responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <button
           onClick={handleBack}
-          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Upload Different File</span>
+          <span className="hidden sm:inline">Upload Different File</span>
+          <span className="sm:hidden">Back</span>
         </button>
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold text-gray-900">{currentFile.filename}</h2>
-          <p className="text-sm text-gray-500">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{currentFile.filename}</h2>
+          <p className="text-xs sm:text-sm text-gray-500">
             {currentFile.mime_type} • {Math.round((currentFile.size_bytes || 0) / 1024)} KB
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
       {/* Left: Image preview (no bbox overlay) */}
       <div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-gray-900">{currentFile.filename}</h3>
+            <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate">{currentFile.filename}</h3>
             
             {/* Page navigation for PDFs */}
             {totalPages > 1 && (

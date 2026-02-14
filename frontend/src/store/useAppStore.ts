@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { WorkflowStep, Granularity, FileMetadata, IdentificationResponse, ExtractRunResponse } from '@/types';
 
 // Source filter type for Review/Export pages
@@ -76,31 +77,33 @@ const initialState = {
 // Step order for navigation logic
 const stepOrder: WorkflowStep[] = ['upload', 'identify', 'select', 'review', 'export'];
 
-export const useAppStore = create<AppState>((set, get) => ({
-  ...initialState,
-  
-  setCurrentStep: (step) => set({ currentStep: step }),
-  
-  setCurrentFile: (file) => set({ 
-    currentFileId: file.id, 
-    currentFile: file,
-    currentStep: 'identify',
-    currentPage: 1,
-  }),
-  
-  setCurrentPage: (page) => set({ 
-    currentPage: page,
-    identification: null, // Reset when changing page
-    options: { granularity: 'full_with_source', selectedElements: [] }
-  }),
-  
-  setGranularity: (granularity) => set((state) => ({
-    options: { ...state.options, granularity }
-  })),
-  
-  setSelectedElements: (elements) => set((state) => ({
-    options: { ...state.options, selectedElements: elements }
-  })),
+export const useAppStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
+      
+      setCurrentStep: (step) => set({ currentStep: step }),
+      
+      setCurrentFile: (file) => set({ 
+        currentFileId: file.id, 
+        currentFile: file,
+        currentStep: 'identify',
+        currentPage: 1,
+      }),
+      
+      setCurrentPage: (page) => set({ 
+        currentPage: page,
+        identification: null, // Reset when changing page
+        options: { granularity: 'full_with_source', selectedElements: [] }
+      }),
+      
+      setGranularity: (granularity) => set((state) => ({
+        options: { ...state.options, granularity }
+      })),
+      
+      setSelectedElements: (elements) => set((state) => ({
+        options: { ...state.options, selectedElements: elements }
+      })),
   
   toggleElement: (elementId) => set((state) => {
     const elements = state.options.selectedElements;
@@ -169,4 +172,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ currentStep: step });
     }
   },
-}));
+}),
+    {
+      name: 'infograph2data-session',
+      storage: createJSONStorage(() => sessionStorage),
+      // Only persist workflow-critical state (not UI state like loading)
+      partialize: (state) => ({
+        currentStep: state.currentStep,
+        currentFileId: state.currentFileId,
+        currentFile: state.currentFile,
+        currentPage: state.currentPage,
+        options: state.options,
+        sourceFilter: state.sourceFilter,
+        identification: state.identification,
+        extraction: state.extraction,
+      }),
+    }
+  )
+);

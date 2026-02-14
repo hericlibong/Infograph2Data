@@ -289,21 +289,30 @@ export function ExportPage() {
           </div>
         )}
 
-        {/* Success message */}
+        {/* Success message with animation */}
         {success && (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center gap-2 text-green-700">
-              <CheckCircle2 className="w-5 h-5" />
-              <span className="font-medium">Export successful!</span>
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex items-center gap-3 text-green-700">
+              <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full animate-bounce">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="font-semibold text-lg">Export successful!</span>
+                <p className="text-sm text-green-600">
+                  Your data has been downloaded
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-green-600 mt-1">
-              Your ZIP file has been downloaded. It contains:
-            </p>
-            <ul className="text-sm text-green-600 mt-2 ml-6 list-disc">
-              {formats.csv && <li>data.csv — Tabular data</li>}
-              {formats.json && <li>data.json — Structured data</li>}
-              <li>manifest.json — Full provenance (source, extraction date, edits)</li>
-            </ul>
+            <div className="mt-4 pl-13">
+              <p className="text-sm text-green-600 font-medium mb-2">
+                Your ZIP file contains:
+              </p>
+              <ul className="text-sm text-green-600 ml-4 space-y-1">
+                {formats.csv && <li className="flex items-center gap-2">✓ data.csv — Tabular data</li>}
+                {formats.json && <li className="flex items-center gap-2">✓ data.json — Structured data</li>}
+                <li className="flex items-center gap-2">✓ manifest.json — Full provenance</li>
+              </ul>
+            </div>
           </div>
         )}
 

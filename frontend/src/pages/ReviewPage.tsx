@@ -3,6 +3,7 @@ import { useAppStore, type SourceFilter } from '@/store/useAppStore';
 import { updateDataset } from '@/api/client';
 import { ArrowLeft, Download, Edit3, Check, X, Filter, Eye, EyeOff, Loader2, CheckCircle2, FileSpreadsheet } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import type { Dataset } from '@/types';
 
 // Editable cell component
@@ -371,6 +372,22 @@ export function ReviewPage() {
     setCurrentStep('export');
   };
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'e',
+      ctrl: true,
+      description: 'Go to Export',
+      action: handleExport,
+    },
+    {
+      key: 'ArrowLeft',
+      alt: true,
+      description: 'Go back',
+      action: handleBack,
+    },
+  ]);
+
   // Guard: redirect if no extraction data
   if (!currentFile || !extraction) {
     return (
@@ -388,42 +405,42 @@ export function ReviewPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={handleBack}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+            className="p-2 hover:bg-gray-100 rounded-lg flex-shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Review Extracted Data</h2>
-            <p className="text-sm text-gray-500">
-              {currentFile.filename} • {datasets.length} datasets • {extraction.duration_ms}ms
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Review Extracted Data</h2>
+            <p className="text-xs sm:text-sm text-gray-500 truncate">
+              {currentFile.filename} • {datasets.length} dataset{datasets.length > 1 ? 's' : ''} • {extraction.duration_ms}ms
             </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 pl-11 sm:pl-0">
           {/* Save status indicator */}
           {saveStatus === 'saving' && (
             <span className="flex items-center gap-2 text-sm text-blue-600">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Saving...
+              <span className="hidden sm:inline">Saving...</span>
             </span>
           )}
           {saveStatus === 'saved' && (
             <span className="flex items-center gap-2 text-sm text-green-600">
               <CheckCircle2 className="w-4 h-4" />
-              Saved
+              <span className="hidden sm:inline">Saved</span>
             </span>
           )}
           {saveStatus === 'error' && (
             <span className="flex items-center gap-2 text-sm text-red-600">
               <X className="w-4 h-4" />
-              Save failed
+              <span className="hidden sm:inline">Save failed</span>
             </span>
           )}
           
