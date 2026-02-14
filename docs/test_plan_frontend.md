@@ -197,7 +197,7 @@ frontend/
 | Test LoadingOverlay | Visibility states | ✅ |
 | Test StepIndicator | Navigation, styling | ✅ |
 
-**Deliverable**: 3 component tests implemented & passing (target: 12). Additional component tests will be added in Phase T4 continuation.
+**Deliverable**: 9 component tests implemented & passing (target: 12). Additional component tests remaining: EditableCell and edge-case behaviors.
 
 ### Phase T5: Page Tests (2.5h)
 
