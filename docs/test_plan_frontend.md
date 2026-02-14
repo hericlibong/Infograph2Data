@@ -187,17 +187,17 @@ frontend/
 
 **Deliverable**: 9 hook/API tests passing ✅
 
-### Phase T4: Component Tests (2h)
+### Phase T4: Component Tests (2h) ✅ IN PROGRESS
 
-| Task | Details |
-|------|---------|
-| Setup component test utilities | renderWithStore helper |
-| Test EditableCell | Edit flow, styling |
-| Test EmptyState | Rendering, action |
-| Test LoadingOverlay | Visibility states |
-| Test StepIndicator | Navigation, styling |
+| Task | Details | Status |
+|------|---------|--------|
+| Setup component test utilities | renderWithStore helper | ✅ |
+| Test EditableCell | Edit flow, styling | ⬜ (pending) |
+| Test EmptyState | Rendering, action | ✅ |
+| Test LoadingOverlay | Visibility states | ✅ |
+| Test StepIndicator | Navigation, styling | ✅ |
 
-**Deliverable**: 12 component tests passing
+**Deliverable**: 3 component tests implemented & passing (target: 12). Additional component tests will be added in Phase T4 continuation.
 
 ### Phase T5: Page Tests (2.5h)
 
