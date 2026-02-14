@@ -38,8 +38,8 @@ The MVP is functional but lacks polish in:
 
 ## Tasks
 
-### UX-1: Enhanced Step Indicator
-**Priority:** High | **Effort:** 2h
+### UX-1: Enhanced Step Indicator ✅ DONE
+**Priority:** High | **Effort:** 2h | **Status:** Completed
 
 | Current | Target |
 |---------|--------|
@@ -51,6 +51,12 @@ The MVP is functional but lacks polish in:
 - Update `StepIndicator.tsx` to show completed/current/pending states
 - Add clickable navigation (only to completed steps)
 - Add subtle animation on step transition
+
+**Changes made:**
+- Added progress bar at top of step indicator
+- Numbered badges with checkmark for completed steps
+- Clickable completed steps with hover effect
+- Confirmation dialog when navigating back with unsaved changes
 
 ---
 
@@ -71,8 +77,8 @@ The MVP is functional but lacks polish in:
 
 ---
 
-### UX-3: Navigation Guards & Confirmations
-**Priority:** High | **Effort:** 1.5h
+### UX-3: Navigation Guards & Confirmations ✅ DONE
+**Priority:** High | **Effort:** 1.5h | **Status:** Completed
 
 | Current | Target |
 |---------|--------|
@@ -88,10 +94,16 @@ The MVP is functional but lacks polish in:
   - Re-running identification (overwrites current)
 - Store `hasUnsavedChanges` in Zustand
 
+**Changes made:**
+- Added `hasUnsavedChanges` state to Zustand store
+- Added `beforeunload` handler in App.tsx
+- Confirmation before re-identification in IdentifyPage
+- Confirmation when navigating back from step indicator
+
 ---
 
-### UX-4: Back Navigation from Any Step
-**Priority:** Medium | **Effort:** 2h
+### UX-4: Back Navigation from Any Step ✅ DONE
+**Priority:** Medium | **Effort:** 2h | **Status:** Completed
 
 | Current | Target |
 |---------|--------|
@@ -104,6 +116,11 @@ The MVP is functional but lacks polish in:
 - Add "Back" button to `ExportPage` (→ Review) ✅ Already done
 - Preserve Zustand state when navigating back
 - Add "Continue" button when returning to a step with existing data
+
+**Changes made:**
+- Added back button + file info header in IdentifyPage
+- Added `canNavigateTo()` and `navigateToStep()` helpers to store
+- Improved empty state in IdentifyPage with action button
 
 ---
 
@@ -217,10 +234,10 @@ The MVP is functional but lacks polish in:
 
 ## Implementation Order (Recommended)
 
-### Sprint 1: Core Navigation (5.5h)
-1. [UX-1] Enhanced Step Indicator
-2. [UX-3] Navigation Guards & Confirmations
-3. [UX-4] Back Navigation from Any Step
+### Sprint 1: Core Navigation (5.5h) ✅ COMPLETED
+1. [UX-1] Enhanced Step Indicator ✅
+2. [UX-3] Navigation Guards & Confirmations ✅
+3. [UX-4] Back Navigation from Any Step ✅
 
 ### Sprint 2: Feedback & Polish (5.5h)
 4. [UX-2] Global Loading Overlay
@@ -235,15 +252,24 @@ The MVP is functional but lacks polish in:
 
 ---
 
-## Files to Modify
+## Files Modified (Sprint 1)
 
 | File | Changes |
 |------|---------|
-| `StepIndicator.tsx` | Clickable, status icons, progress bar |
+| `StepIndicator.tsx` | ✅ Clickable, status icons, progress bar |
+| `useAppStore.ts` | ✅ hasUnsavedChanges, canNavigateTo, navigateToStep |
+| `App.tsx` | ✅ beforeunload handler |
+| `IdentifyPage.tsx` | ✅ Back button, confirmation dialogs, improved empty state |
+| `ReviewPage.tsx` | ✅ setHasUnsavedChanges on edit |
+
+## Files to Modify (Sprint 2-3)
+
+| File | Changes |
+|------|---------|
 | `MainLayout.tsx` | Loading overlay integration |
-| `useAppStore.ts` | Loading state, hasUnsavedChanges, persist |
+| `useAppStore.ts` | Loading state, persist |
 | `UploadPage.tsx` | Resume session prompt |
-| `IdentifyPage.tsx` | Back button, progress feedback |
+| `IdentifyPage.tsx` | Progress feedback |
 | `ReviewPage.tsx` | Empty state, keyboard shortcuts |
 | `ExportPage.tsx` | Success animation |
 | **New:** `LoadingOverlay.tsx` | Full-page loading component |

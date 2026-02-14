@@ -282,7 +282,8 @@ export function ReviewPage() {
     extraction,
     sourceFilter,
     setSourceFilter,
-    setCurrentStep 
+    setCurrentStep,
+    setHasUnsavedChanges
   } = useAppStore();
 
   const [datasets, setDatasets] = useState<Dataset[]>(extraction?.datasets || []);
@@ -300,6 +301,7 @@ export function ReviewPage() {
         rows: dataset.rows,
       });
       setSaveStatus('saved');
+      setHasUnsavedChanges(false);
       // Reset to idle after 2 seconds
       setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (err) {
@@ -307,7 +309,7 @@ export function ReviewPage() {
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
-  }, []);
+  }, [setHasUnsavedChanges]);
 
   // Calculate total counts across all datasets
   const totalCounts = useMemo(() => {
@@ -327,6 +329,9 @@ export function ReviewPage() {
   }, [datasets]);
 
   const handleUpdateRow = (datasetIndex: number, rowIndex: number, column: string, value: string) => {
+    // Mark as having unsaved changes immediately
+    setHasUnsavedChanges(true);
+    
     setDatasets(prev => {
       const updated = [...prev];
       updated[datasetIndex] = {

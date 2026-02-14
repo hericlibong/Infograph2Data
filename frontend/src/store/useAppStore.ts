@@ -28,6 +28,9 @@ interface AppState {
   // Extraction result
   extraction: ExtractRunResponse | null;
   
+  // UX: Track unsaved changes for navigation guards
+  hasUnsavedChanges: boolean;
+  
   // Actions
   setCurrentStep: (step: WorkflowStep) => void;
   setCurrentFile: (file: FileMetadata) => void;
@@ -38,7 +41,12 @@ interface AppState {
   setIdentification: (result: IdentificationResponse) => void;
   setExtraction: (result: ExtractRunResponse) => void;
   setSourceFilter: (filter: SourceFilter) => void;
+  setHasUnsavedChanges: (value: boolean) => void;
   reset: () => void;
+  
+  // Navigation helpers
+  canNavigateTo: (step: WorkflowStep) => boolean;
+  navigateToStep: (step: WorkflowStep) => void;
 }
 
 const initialState = {
@@ -53,9 +61,13 @@ const initialState = {
   sourceFilter: 'all' as SourceFilter,
   identification: null,
   extraction: null,
+  hasUnsavedChanges: false,
 };
 
-export const useAppStore = create<AppState>((set) => ({
+// Step order for navigation logic
+const stepOrder: WorkflowStep[] = ['upload', 'identify', 'select', 'review', 'export'];
+
+export const useAppStore = create<AppState>((set, get) => ({
   ...initialState,
   
   setCurrentStep: (step) => set({ currentStep: step }),
@@ -106,5 +118,40 @@ export const useAppStore = create<AppState>((set) => ({
   
   setSourceFilter: (filter) => set({ sourceFilter: filter }),
   
+  setHasUnsavedChanges: (value) => set({ hasUnsavedChanges: value }),
+  
   reset: () => set(initialState),
+  
+  // Check if user can navigate to a specific step
+  canNavigateTo: (step) => {
+    const state = get();
+    const targetIndex = stepOrder.indexOf(step);
+    const currentIndex = stepOrder.indexOf(state.currentStep);
+    
+    // Can always go back
+    if (targetIndex < currentIndex) return true;
+    
+    // Check requirements for forward navigation
+    switch (step) {
+      case 'upload':
+        return true;
+      case 'identify':
+      case 'select':
+        return state.currentFile !== null;
+      case 'review':
+        return state.extraction !== null;
+      case 'export':
+        return state.extraction !== null;
+      default:
+        return false;
+    }
+  },
+  
+  // Navigate to a step (with validation)
+  navigateToStep: (step) => {
+    const state = get();
+    if (state.canNavigateTo(step)) {
+      set({ currentStep: step });
+    }
+  },
 }));

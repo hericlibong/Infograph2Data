@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdentify } from '@/api/hooks';
 import { getFilePreviewUrl, runExtraction } from '@/api/client';
-import { Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Check, Square, CheckSquare } from 'lucide-react';
+import { Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Check, Square, CheckSquare, ArrowLeft, Upload } from 'lucide-react';
 
 export function IdentifyPage() {
   const { 
@@ -15,7 +15,8 @@ export function IdentifyPage() {
     options, 
     identification,
     setExtraction,
-    setCurrentStep
+    setCurrentStep,
+    reset
   } = useAppStore();
   
   const identifyMutation = useIdentify();
@@ -27,6 +28,15 @@ export function IdentifyPage() {
 
   const handleIdentify = () => {
     if (!currentFile) return;
+    
+    // Confirm if re-analyzing (will lose current identification)
+    if (identification) {
+      const confirmed = window.confirm(
+        'Re-analyzing will replace the current identification results.\n\nAre you sure you want to continue?'
+      );
+      if (!confirmed) return;
+    }
+    
     identifyMutation.mutate(
       { fileId: currentFile.id, page: currentPage },
       {
@@ -35,6 +45,17 @@ export function IdentifyPage() {
         },
       }
     );
+  };
+
+  const handleBack = () => {
+    // Confirm if there's identification data
+    if (identification) {
+      const confirmed = window.confirm(
+        'Going back will clear the current identification.\n\nAre you sure you want to upload a different file?'
+      );
+      if (!confirmed) return;
+    }
+    reset();
   };
 
   const handleSelectAll = () => {
@@ -104,13 +125,38 @@ export function IdentifyPage() {
   if (!currentFile) {
     return (
       <div className="text-center py-12 text-gray-500">
-        No file selected. Please upload a file first.
+        <Upload className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p className="mb-4">No file selected. Please upload a file first.</p>
+        <button
+          onClick={() => setCurrentStep('upload')}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Go to Upload
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-4">
+      {/* Back button */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Upload Different File</span>
+        </button>
+        <div className="flex-1">
+          <h2 className="text-lg font-semibold text-gray-900">{currentFile.filename}</h2>
+          <p className="text-sm text-gray-500">
+            {currentFile.mime_type} • {Math.round((currentFile.size_bytes || 0) / 1024)} KB
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left: Image preview (no bbox overlay) */}
       <div>
         <div className="bg-white rounded-xl shadow-sm p-4">
@@ -314,6 +360,7 @@ export function IdentifyPage() {
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
