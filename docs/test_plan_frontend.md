@@ -155,37 +155,37 @@ frontend/
 
 ## E) Implementation Phases
 
-### Phase T1: Setup (1h)
+### Phase T1: Setup (1h) ✅ COMPLETE
 
-| Task | Details |
-|------|---------|
-| Install dependencies | vitest, @testing-library/react, @testing-library/user-event, jsdom, msw |
-| Create vitest.config.ts | Configure jsdom environment, coverage |
-| Create test setup file | Global setup, cleanup |
-| Add test scripts to package.json | `test`, `test:coverage`, `test:ui` |
+| Task | Details | Status |
+|------|---------|--------|
+| Install dependencies | vitest, @testing-library/react, @testing-library/user-event, jsdom, msw | ✅ |
+| Create vitest.config.ts | Configure jsdom environment, coverage | ✅ |
+| Create test setup file | Global setup, cleanup | ✅ |
+| Add test scripts to package.json | `test`, `test:run`, `test:coverage` | ✅ |
 
-**Deliverable**: `npm run test` runs successfully (0 tests)
+**Deliverable**: `npm run test:run` runs successfully (5 tests passing) ✅
 
-### Phase T2: Store Tests (1.5h)
+### Phase T2: Store Tests (1.5h) ✅ COMPLETE
 
-| Task | Details |
-|------|---------|
-| Test initial state | Verify defaults |
-| Test all actions | Each action has at least 1 test |
-| Test navigation helpers | canNavigateTo logic |
-| Test persistence | sessionStorage save/restore |
+| Task | Details | Status |
+|------|---------|--------|
+| Test initial state | Verify defaults | ✅ |
+| Test all actions | Each action has at least 1 test | ✅ |
+| Test navigation helpers | canNavigateTo logic | ✅ |
+| Test persistence | sessionStorage save/restore | ✅ |
 
-**Deliverable**: 10 store tests passing
+**Deliverable**: 11 store tests passing ✅
 
-### Phase T3: Hook & API Tests (1.5h)
+### Phase T3: Hook & API Tests (1.5h) ✅ COMPLETE
 
-| Task | Details |
-|------|---------|
-| Test useKeyboardShortcuts | Keyboard event handling |
-| Mock axios with vi.mock | API client tests |
-| Test API functions | Request/response validation |
+| Task | Details | Status |
+|------|---------|--------|
+| Test useKeyboardShortcuts | Keyboard event handling | ✅ |
+| Mock axios with vi.mock | API client tests (MSW used instead) | ✅ |
+| Test API functions | Request/response validation | ✅ |
 
-**Deliverable**: 9 hook/API tests passing
+**Deliverable**: 9 hook/API tests passing ✅
 
 ### Phase T4: Component Tests (2h)
 
