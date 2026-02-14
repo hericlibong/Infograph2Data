@@ -1,7 +1,8 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useAppStore, type SourceFilter } from '@/store/useAppStore';
 import { updateDataset } from '@/api/client';
-import { ArrowLeft, Download, Edit3, Check, X, Filter, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Download, Edit3, Check, X, Filter, Eye, EyeOff, Loader2, CheckCircle2, FileSpreadsheet } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
 import type { Dataset } from '@/types';
 
 // Editable cell component
@@ -373,15 +374,16 @@ export function ReviewPage() {
   // Guard: redirect if no extraction data
   if (!currentFile || !extraction) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">No extraction data available.</p>
-        <button
-          onClick={handleBack}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Go Back to Identify
-        </button>
-      </div>
+      <EmptyState
+        icon={<FileSpreadsheet className="w-8 h-8 text-gray-400" />}
+        title="No Extraction Data"
+        description="Complete the identification and extraction steps first to see your data here."
+        action={{
+          label: 'Go to Identify',
+          onClick: handleBack,
+        }}
+        hint="Select elements from your image and extract their data to review it here."
+      />
     );
   }
 

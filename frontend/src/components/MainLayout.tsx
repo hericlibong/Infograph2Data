@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Header } from './Header';
 import { StepIndicator } from './StepIndicator';
+import { LoadingOverlay } from './LoadingOverlay';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -19,6 +20,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           Infograph2Data — Hackathon Project
         </div>
       </footer>
+      <LoadingOverlay />
     </div>
   );
 }

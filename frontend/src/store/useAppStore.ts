@@ -31,6 +31,11 @@ interface AppState {
   // UX: Track unsaved changes for navigation guards
   hasUnsavedChanges: boolean;
   
+  // UX: Global loading state
+  isLoading: boolean;
+  loadingMessage: string | null;
+  loadingProgress: number | null;
+  
   // Actions
   setCurrentStep: (step: WorkflowStep) => void;
   setCurrentFile: (file: FileMetadata) => void;
@@ -42,6 +47,7 @@ interface AppState {
   setExtraction: (result: ExtractRunResponse) => void;
   setSourceFilter: (filter: SourceFilter) => void;
   setHasUnsavedChanges: (value: boolean) => void;
+  setLoading: (isLoading: boolean, message?: string | null, progress?: number | null) => void;
   reset: () => void;
   
   // Navigation helpers
@@ -62,6 +68,9 @@ const initialState = {
   identification: null,
   extraction: null,
   hasUnsavedChanges: false,
+  isLoading: false,
+  loadingMessage: null as string | null,
+  loadingProgress: null as number | null,
 };
 
 // Step order for navigation logic
@@ -119,6 +128,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSourceFilter: (filter) => set({ sourceFilter: filter }),
   
   setHasUnsavedChanges: (value) => set({ hasUnsavedChanges: value }),
+  
+  setLoading: (isLoading, message = null, progress = null) => set({ 
+    isLoading, 
+    loadingMessage: message, 
+    loadingProgress: progress 
+  }),
   
   reset: () => set(initialState),
   

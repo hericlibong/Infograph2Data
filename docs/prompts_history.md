@@ -896,6 +896,7 @@ saveTimerRef.current = setTimeout(() => {
 | 19 | UX | Bug Fix | Issue 010 resolved, expiry handled with clear message |
 | 20 | Planning | Phase 7 Plan | UX improvements plan created (10 tasks, 3 sprints) |
 | 21 | Phase 7 | Sprint 1 | UX-1, UX-3, UX-4 implemented (step indicator, guards, back nav) |
+| 22 | Phase 7 | Sprint 2 | UX-2, UX-5, UX-6 implemented (loading overlay, empty states, progress) |
 
 ---
 

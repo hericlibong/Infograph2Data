@@ -124,8 +124,8 @@ The MVP is functional but lacks polish in:
 
 ---
 
-### UX-5: Empty States & Guidance
-**Priority:** Medium | **Effort:** 1.5h
+### UX-5: Empty States & Guidance ✅ DONE
+**Priority:** Medium | **Effort:** 1.5h | **Status:** Completed
 
 | Current | Target |
 |---------|--------|
@@ -139,10 +139,15 @@ The MVP is functional but lacks polish in:
 - Add "What's next?" hints after each step completion
 - Improve error messages with suggested actions
 
+**Changes made:**
+- Created reusable `EmptyState.tsx` component with icon, title, description, action, hint
+- Updated ReviewPage empty state with helpful guidance
+- Updated ExportPage empty state with workflow hints
+
 ---
 
-### UX-6: Extraction Progress Feedback
-**Priority:** Medium | **Effort:** 2h
+### UX-6: Extraction Progress Feedback ✅ DONE
+**Priority:** Medium | **Effort:** 2h | **Status:** Completed
 
 | Current | Target |
 |---------|--------|
@@ -155,6 +160,25 @@ The MVP is functional but lacks polish in:
 - Show list of elements being processed with checkmarks
 - Add elapsed time counter
 - Option: WebSocket for real-time backend progress (advanced)
+
+**Changes made:**
+- Added `extractionProgress` state tracking current/total/completedItems
+- Added elapsed time counter with useEffect interval
+- Progress bar with percentage
+- Element list showing completed (✓), current (spinner), pending states
+- Helper functions `formatElapsedTime` and `getElementName`
+
+---
+
+### UX-2: Global Loading Overlay ✅ DONE
+**Priority:** High | **Effort:** 2h | **Status:** Completed
+
+**Changes made:**
+- Created `LoadingOverlay.tsx` component with spinner, message, progress bar
+- Added `isLoading`, `loadingMessage`, `loadingProgress` to Zustand store
+- Added `setLoading()` action
+- Integrated in MainLayout
+- Used in UploadPage and IdentifyPage (identify operation)
 
 ---
 
@@ -239,10 +263,10 @@ The MVP is functional but lacks polish in:
 2. [UX-3] Navigation Guards & Confirmations ✅
 3. [UX-4] Back Navigation from Any Step ✅
 
-### Sprint 2: Feedback & Polish (5.5h)
-4. [UX-2] Global Loading Overlay
-5. [UX-5] Empty States & Guidance
-6. [UX-6] Extraction Progress Feedback
+### Sprint 2: Feedback & Polish (5.5h) ✅ COMPLETED
+4. [UX-2] Global Loading Overlay ✅
+5. [UX-5] Empty States & Guidance ✅
+6. [UX-6] Extraction Progress Feedback ✅
 
 ### Sprint 3: Nice-to-have (9.5h)
 7. [UX-7] Keyboard Shortcuts
@@ -262,19 +286,27 @@ The MVP is functional but lacks polish in:
 | `IdentifyPage.tsx` | ✅ Back button, confirmation dialogs, improved empty state |
 | `ReviewPage.tsx` | ✅ setHasUnsavedChanges on edit |
 
-## Files to Modify (Sprint 2-3)
+## Files Modified (Sprint 2)
 
 | File | Changes |
 |------|---------|
-| `MainLayout.tsx` | Loading overlay integration |
-| `useAppStore.ts` | Loading state, persist |
-| `UploadPage.tsx` | Resume session prompt |
-| `IdentifyPage.tsx` | Progress feedback |
-| `ReviewPage.tsx` | Empty state, keyboard shortcuts |
+| `LoadingOverlay.tsx` | ✅ **New** - Full-page loading component |
+| `EmptyState.tsx` | ✅ **New** - Reusable empty state component |
+| `MainLayout.tsx` | ✅ Loading overlay integration |
+| `useAppStore.ts` | ✅ isLoading, loadingMessage, loadingProgress, setLoading |
+| `UploadPage.tsx` | ✅ Global loading overlay usage |
+| `IdentifyPage.tsx` | ✅ Extraction progress UI with timer and element list |
+| `ReviewPage.tsx` | ✅ EmptyState component usage |
+| `ExportPage.tsx` | ✅ EmptyState component usage |
+
+## Files to Modify (Sprint 3)
+
+| File | Changes |
+|------|---------|
+| `useKeyboardShortcuts.ts` | **New** - Keyboard hook |
+| Various pages | Responsive breakpoints |
 | `ExportPage.tsx` | Success animation |
-| **New:** `LoadingOverlay.tsx` | Full-page loading component |
-| **New:** `useKeyboardShortcuts.ts` | Keyboard hook |
-| **New:** `EmptyState.tsx` | Reusable empty state component |
+| `useAppStore.ts` | Persist middleware |
 
 ---
 

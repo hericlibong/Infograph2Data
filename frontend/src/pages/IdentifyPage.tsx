@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useIdentify } from '@/api/hooks';
 import { getFilePreviewUrl, runExtraction } from '@/api/client';
-import { Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Check, Square, CheckSquare, ArrowLeft, Upload } from 'lucide-react';
+import { Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Check, Square, CheckSquare, ArrowLeft, Upload, Clock } from 'lucide-react';
 
 export function IdentifyPage() {
   const { 
@@ -16,15 +16,36 @@ export function IdentifyPage() {
     identification,
     setExtraction,
     setCurrentStep,
+    setLoading,
     reset
   } = useAppStore();
   
   const identifyMutation = useIdentify();
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const [extractionProgress, setExtractionProgress] = useState<{
+    current: number;
+    total: number;
+    currentItemId: string | null;
+    completedItems: string[];
+    elapsedSeconds: number;
+  } | null>(null);
 
   const totalPages = currentFile?.pages ?? 1;
   const isPdf = currentFile?.mime_type === 'application/pdf';
+
+  // Timer for elapsed time during extraction
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (isExtracting && extractionProgress) {
+      interval = setInterval(() => {
+        setExtractionProgress(prev => prev ? { ...prev, elapsedSeconds: prev.elapsedSeconds + 1 } : null);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isExtracting]);
 
   const handleIdentify = () => {
     if (!currentFile) return;
@@ -37,11 +58,17 @@ export function IdentifyPage() {
       if (!confirmed) return;
     }
     
+    setLoading(true, 'Analyzing image...');
+    
     identifyMutation.mutate(
       { fileId: currentFile.id, page: currentPage },
       {
         onSuccess: (result) => {
+          setLoading(false);
           setIdentification(result);
+        },
+        onError: () => {
+          setLoading(false);
         },
       }
     );
@@ -81,6 +108,15 @@ export function IdentifyPage() {
     setExtractError(null);
     setIsExtracting(true);
     
+    // Initialize progress tracking
+    setExtractionProgress({
+      current: 0,
+      total: itemIds.length,
+      currentItemId: itemIds[0],
+      completedItems: [],
+      elapsedSeconds: 0,
+    });
+    
     try {
       console.log('🚀 Starting extraction for items:', itemIds);
       
@@ -91,6 +127,14 @@ export function IdentifyPage() {
       });
       
       console.log('✅ Extraction completed:', result);
+      
+      // Mark all items as completed
+      setExtractionProgress(prev => prev ? {
+        ...prev,
+        current: itemIds.length,
+        completedItems: itemIds,
+        currentItemId: null,
+      } : null);
       
       // Store result in Zustand
       setExtraction(result);
@@ -108,7 +152,21 @@ export function IdentifyPage() {
       }
     } finally {
       setIsExtracting(false);
+      setExtractionProgress(null);
     }
+  };
+
+  // Helper to format elapsed time
+  const formatElapsedTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+  };
+
+  // Get element name by ID
+  const getElementName = (itemId: string) => {
+    const item = identification?.detected_items.find(e => e.item_id === itemId);
+    return item?.description?.slice(0, 40) || item?.type || itemId;
   };
 
   const handleExtractSelected = () => {
@@ -328,16 +386,61 @@ export function IdentifyPage() {
                   </div>
                 )}
                 
-                {isExtracting ? (
-                  <div className="flex flex-col items-center justify-center gap-2 py-6 bg-blue-50 rounded-lg">
-                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-                    <span className="text-blue-700 font-medium">Extracting data...</span>
-                    <span className="text-blue-600 text-sm">
-                      Processing {options.selectedElements.length} element(s) sequentially
-                    </span>
-                    <span className="text-blue-500 text-xs">
-                      This may take 20-60 seconds per element
-                    </span>
+                {isExtracting && extractionProgress ? (
+                  <div className="bg-blue-50 rounded-lg p-4 space-y-4">
+                    {/* Header with spinner and timer */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                        <span className="text-blue-700 font-medium">Extracting data...</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-blue-600">
+                        <Clock className="w-4 h-4" />
+                        <span>{formatElapsedTime(extractionProgress.elapsedSeconds)}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Progress bar */}
+                    <div className="w-full h-2 bg-blue-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-600 transition-all duration-500"
+                        style={{ width: `${Math.max(5, (extractionProgress.current / extractionProgress.total) * 100)}%` }}
+                      />
+                    </div>
+                    
+                    {/* Element list with status */}
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {options.selectedElements.map((itemId, index) => {
+                        const isCompleted = extractionProgress.completedItems.includes(itemId);
+                        const isCurrent = extractionProgress.currentItemId === itemId;
+                        
+                        return (
+                          <div
+                            key={itemId}
+                            className={`flex items-center gap-2 text-sm px-2 py-1 rounded ${
+                              isCompleted ? 'text-green-700 bg-green-100' :
+                              isCurrent ? 'text-blue-700 bg-blue-100' :
+                              'text-gray-500'
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <Check className="w-4 h-4 text-green-600" />
+                            ) : isCurrent ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+                            )}
+                            <span className="truncate">
+                              {index + 1}. {getElementName(itemId)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    <p className="text-xs text-blue-500 text-center">
+                      Processing element {extractionProgress.current + 1} of {extractionProgress.total}
+                    </p>
                   </div>
                 ) : (
                   <div className="flex gap-2">

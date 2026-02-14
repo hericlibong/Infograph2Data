@@ -10,9 +10,11 @@ import {
   FileJson,
   Package,
   Loader2,
-  Filter
+  Filter,
+  FileSpreadsheet
 } from 'lucide-react';
 import { exportDataset } from '@/api/client';
+import { EmptyState } from '@/components/EmptyState';
 import type { Dataset } from '@/types';
 
 // Dataset summary card
@@ -198,19 +200,16 @@ export function ExportPage() {
 
   if (!extraction || datasets.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto p-8 text-center">
-        <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-        <h2 className="text-xl font-semibold text-gray-700 mb-2">No Data to Export</h2>
-        <p className="text-gray-500 mb-6">
-          Please complete the extraction process first.
-        </p>
-        <button
-          onClick={handleStartNew}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Start New Extraction
-        </button>
-      </div>
+      <EmptyState
+        icon={<FileSpreadsheet className="w-8 h-8 text-gray-400" />}
+        title="No Data to Export"
+        description="Complete the extraction and review process first to export your data."
+        action={{
+          label: 'Start New Extraction',
+          onClick: handleStartNew,
+        }}
+        hint="Upload an image, identify elements, extract data, then come back here to download."
+      />
     );
   }
 
