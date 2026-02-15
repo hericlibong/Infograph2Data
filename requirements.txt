@@ -11,7 +11,7 @@ httpcore==1.0.9
 httptools==0.7.1
 httpx==0.28.1
 idna==3.11
--e git+ssh://git@github.com/hericlibong/Infograph2Data.git@e65a3d9494014852bf03d0befed60c8e5c667797#egg=infograph2data
+
 iniconfig==2.3.0
 jiter==0.13.0
 openai==2.17.0
