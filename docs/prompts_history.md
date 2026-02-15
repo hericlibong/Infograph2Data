@@ -929,4 +929,30 @@ saveTimerRef.current = setTimeout(() => {
 
 ---
 
+## 18. Docker Deployment Files & Branch
+
+**Date:** 2026-02-15
+
+### Actions performed
+
+- Created branch `ops/deployment-huggingface` and committed Docker & deployment files.
+- Generated `requirements.txt` from current virtualenv.
+- Added `.dockerignore` and `Dockerfile` (multi-stage) at repo root.
+- Ensured `frontend/dist` is included in the final image and backend serves it.
+
+### Files created/modified
+
+- Created: `Dockerfile`, `.dockerignore`, `requirements.txt`, `docs/deployment_docker.md`
+- Modified: `docs/deployment.md`, `docs/prompts_history.md`
+
+---
+
 *Last updated: 2026-02-15*
+
+### 18b. Branch pushed to remote
+
+**Date:** 2026-02-15
+
+- Branch `ops/deployment-huggingface` pushed to `origin`.
+
+
