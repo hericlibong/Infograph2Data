@@ -22,13 +22,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers
-app.include_router(health.router)
-app.include_router(upload.router)
-app.include_router(extraction.router)
-app.include_router(identify.router)
-app.include_router(review.router)
-app.include_router(export.router)
+# API Routers (All prefixed with /api)
+app.include_router(health.router, prefix="/api/health", tags=["Health"])
+app.include_router(upload.router, prefix="/api/files", tags=["Upload"])
+app.include_router(extraction.router, prefix="/api/extract", tags=["Extraction"])
+app.include_router(identify.router, prefix="/api/identify", tags=["Identify"])
+app.include_router(review.router, prefix="/api/review", tags=["Review"])
+app.include_router(export.router, prefix="/api/export", tags=["Export"])
 
 # Serve frontend static files (React build)
 app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
