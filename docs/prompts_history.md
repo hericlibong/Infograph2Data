@@ -902,4 +902,31 @@ saveTimerRef.current = setTimeout(() => {
 
 ---
 
-*Last updated: 2026-02-14*
+## 17. Deployment Preparation (Build & Serve Frontend)
+
+**Date:** 2026-02-15
+
+### Actions performed
+
+- Updated frontend TypeScript config to exclude test files from the app build: `frontend/tsconfig.app.json` (added "exclude": ["src/test", "**/*.test.ts", "**/*.test.tsx", "src/setupTests.ts"]).
+- Updated backend to serve React build from `frontend/dist` by importing and mounting StaticFiles and FileResponse and adding a catch-all route: `backend/app/main.py`.
+- Fixed minor TypeScript warnings by removing unused imports in `frontend/src/components/EditableCell.tsx` and `frontend/src/pages/ReviewPage.tsx` to allow production build.
+- Created deployment documentation at `docs/deployment.md` describing how to build the frontend and run the backend (uvicorn on port 7860) and notes for Docker/Hugging Face.
+- Built the frontend successfully (`cd frontend && npm run build`), which produced `frontend/dist` with `index.html` and `assets/`.
+
+### Files modified/created
+
+- Modified: `frontend/tsconfig.app.json`
+- Modified: `backend/app/main.py`
+- Modified: `frontend/src/components/EditableCell.tsx`
+- Modified: `frontend/src/pages/ReviewPage.tsx`
+- Created: `docs/deployment.md`
+
+### Verification commands run
+
+- `cd frontend && npm run build` — completed with success; `dist/` generated.
+- Suggested run to serve app: `uvicorn backend.app.main:app --host 0.0.0.0 --port 7860` (ensure `frontend/dist` exists in repo/image).
+
+---
+
+*Last updated: 2026-02-15*

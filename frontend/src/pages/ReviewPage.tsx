@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useAppStore, type SourceFilter } from '@/store/useAppStore';
 import { updateDataset } from '@/api/client';
-import { ArrowLeft, Download, Edit3, Check, X, Filter, Eye, EyeOff, Loader2, CheckCircle2, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Download, Edit3, X, Filter, Eye, EyeOff, Loader2, CheckCircle2, FileSpreadsheet } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import type { Dataset } from '@/types';
