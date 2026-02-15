@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, act } from '@testing-library/react'
 import { vi } from 'vitest'
 import { LoadingOverlay } from '@/components/LoadingOverlay'
 import { EmptyState } from '@/components/EmptyState'
@@ -26,7 +26,7 @@ describe('Additional component tests', () => {
     useAppStore.getState().setLoading(true, 'Working', 73.6)
     const { getByText } = render(<LoadingOverlay />)
     expect(getByText('74%')).toBeTruthy()
-    useAppStore.getState().setLoading(false)
+    act(() => useAppStore.getState().setLoading(false))
   })
 
   it('StepIndicator cancels navigation on unsaved changes when confirm is false', () => {

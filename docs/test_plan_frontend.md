@@ -187,19 +187,19 @@ frontend/
 
 **Deliverable**: 9 hook/API tests passing ✅
 
-### Phase T4: Component Tests (2h) ✅ IN PROGRESS
+### Phase T4: Component Tests (2h) ✅ COMPLETE
 
 | Task | Details | Status |
 |------|---------|--------|
 | Setup component test utilities | renderWithStore helper | ✅ |
-| Test EditableCell | Edit flow, styling | ⬜ (pending) |
+| Test EditableCell | Edit flow, styling | ✅ |
 | Test EmptyState | Rendering, action | ✅ |
 | Test LoadingOverlay | Visibility states | ✅ |
 | Test StepIndicator | Navigation, styling | ✅ |
 
-**Deliverable**: 9 component tests implemented & passing (target: 12). Additional component tests remaining: EditableCell and edge-case behaviors.
+**Deliverable**: All component tests implemented & passing (COMP-001..COMP-012).
 
-### Phase T5: Page Tests (2.5h) ✅ IN PROGRESS
+### Phase T5: Page Tests (2.5h) ✅ COMPLETE
 
 | Task | Details | Status |
 |------|---------|--------|
@@ -207,19 +207,19 @@ frontend/
 | Test UploadPage | File upload flow | ✅ |
 | Test IdentifyPage | Identification flow | ✅ |
 | Test ReviewPage | Edit and filter flow | ✅ |
-| Test ExportPage | Export flow | IN PROGRESS |
+| Test ExportPage | Export flow | ✅ |
 
-**Deliverable**: 12 page tests planned; initial tests implemented and running locally.
+**Deliverable**: All page tests implemented and passing locally.
 
-### Phase T6: Coverage & CI (1h)
+### Phase T6: Coverage & CI (1h) ✅ COMPLETE
 
-| Task | Details |
-|------|---------|
-| Configure coverage threshold | 70% minimum |
-| Add to CI workflow | Run tests on PR |
-| Document test commands | Update README |
+| Task | Details | Status |
+|------|---------|--------|
+| Configure coverage threshold | 70% minimum (configured in vitest.config.ts) | ✅ |
+| Add to CI workflow | Run coverage and upload report (.github/workflows/frontend-tests.yml) | ✅ |
+| Document test commands | Update README | ✅ |
 
-**Deliverable**: Tests run in CI, coverage reports generated
+**Deliverable**: Tests now run in CI with coverage reporting; thresholds enforced by Vitest configuration.
 
 ---
 

@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, act } from '@testing-library/react'
 import { vi } from 'vitest'
 import { LoadingOverlay } from '@/components/LoadingOverlay'
 import { EmptyState } from '@/components/EmptyState'
@@ -14,7 +14,6 @@ function renderWithStore(ui: React.ReactElement, modify?: (store: any) => void) 
 
 describe('Components', () => {
   it('LoadingOverlay renders when loading', () => {
-    const restore = useAppStore.getState().setLoading
     useAppStore.getState().setLoading(true, 'Processing', 45)
 
     const { getByText } = render(<LoadingOverlay />)
@@ -22,7 +21,7 @@ describe('Components', () => {
     expect(getByText('Please wait, this may take a moment...')).toBeTruthy()
 
     // cleanup
-    restore(false)
+    act(() => useAppStore.getState().setLoading(false))
   })
 
   it('EmptyState renders title, description and action', () => {
