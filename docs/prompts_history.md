@@ -956,3 +956,10 @@ saveTimerRef.current = setTimeout(() => {
 - Branch `ops/deployment-huggingface` pushed to `origin`.
 
 
+
+## 21. Removed git package from requirements (finalized)
+
+**Date:** 2026-02-15T19:59:34Z
+
+- Action: Removed '-e git+ssh://...' line from requirements.txt, committed (fix: remove local git package reference from requirements) and pushed branch ops/deployment-huggingface.
+
