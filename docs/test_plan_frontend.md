@@ -199,17 +199,17 @@ frontend/
 
 **Deliverable**: 9 component tests implemented & passing (target: 12). Additional component tests remaining: EditableCell and edge-case behaviors.
 
-### Phase T5: Page Tests (2.5h)
+### Phase T5: Page Tests (2.5h) ✅ IN PROGRESS
 
-| Task | Details |
-|------|---------|
-| Setup MSW handlers | Mock all API endpoints |
-| Test UploadPage | File upload flow |
-| Test IdentifyPage | Identification flow |
-| Test ReviewPage | Edit and filter flow |
-| Test ExportPage | Export flow |
+| Task | Details | Status |
+|------|---------|--------|
+| Setup MSW handlers | Mock all API endpoints | ✅ |
+| Test UploadPage | File upload flow | ✅ |
+| Test IdentifyPage | Identification flow | ✅ |
+| Test ReviewPage | Edit and filter flow | ✅ |
+| Test ExportPage | Export flow | IN PROGRESS |
 
-**Deliverable**: 12 page tests passing
+**Deliverable**: 12 page tests planned; initial tests implemented and running locally.
 
 ### Phase T6: Coverage & CI (1h)
 
