@@ -16,7 +16,6 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
         timeout: 300000, // 5 minutes for Vision LLM
         proxyTimeout: 300000,
       },
