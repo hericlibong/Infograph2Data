@@ -15,7 +15,7 @@
 ## 🚀 Live Demo
 
 Don't want to install anything? Try the app directly in your browser:
-👉 **[Access the Live Demo on Hugging Face Spaces](https://huggingface.co/spaces/ricolajazz/Infograph2Data-Demo)**
+👉 **[Access the Live Demo on Hugging Face Spaces](https://ricolajazz-infograph2data-demo.hf.space/)**
 
 *(Note: The extraction flow may require an OpenAI API Key for the LLM-based extraction.)*
 
